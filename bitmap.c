@@ -31,7 +31,20 @@ int BitMap_get(BitMap* bmap, int start, int status){
 
 }
 
+//ls
 // sets the bit at index pos in bmap to status
 int BitMap_set(BitMap* bmap, int pos, int status){
+    if(pos > bitmap->num_bits)  //se pos > num_bits la posizione "pos" indica un blocco invalido
+        return -1;
 
+    BitMapEntryKey bmentry = BitMap_blockToIndex(pos); //prendo l'indice della posizione "pos"
+	uint8_t mask = 1 << (7 - bmentry.bit_num); //imposto la maschera di bit
+
+	// setto la maschera dopo il controllo di status
+	if(status)
+		bitmap->entries[bmentry.entry_num] |= mask;
+	else
+    	bitmap->entries[bmentry.entry_num] &= ~(mask);
+
+    return status;
 }
