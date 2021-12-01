@@ -28,12 +28,16 @@ int BitMap_indexToBlock(int entry, uint8_t bit_num){
 // JM ritorna l'indice del del primo bit che ha lo status "status" 
 // nella bitmap bmap e inizo a cercare dalla posizione "start"
 int BitMap_get(BitMap* bmap, int start, int status){
+		
 
-
-	// il for permette di cercare l'indice del primo bit con lo status "status" nella bmap
+	// JM il for permette di cercare l'indice del primo bit con lo status "status" nella bmap
 	int i;  
-	// variabile che indica la posizione dell offset
+	// JM variabile che indica la posizione dell offset
 	int offsetp;
+	
+	//JM fix è necessario che lo start non si maggiore sia all'interno dell'array 
+	if(start > bitmap->num_bits) return -1;
+
 	 
 	for(i = start; i<= bitmap->num_bits-1; i++) {
 
@@ -41,13 +45,13 @@ int BitMap_get(BitMap* bmap, int start, int status){
 		
 		BitMapEntryKey bmkey = BitMap_blockToIndex(i);
 		
-		 // setta una maschera shiftando 1 nella posizione dell'offset
+		 // JM setta una maschera shiftando 1 nella posizione dell'offset
 		uint8_t bmask = 1 << (7 - bmek.bit_num);
 		
-		// faccio un and bit a bit per selezionare il bit nella posizone nella posizione dell'offset
+		// JM faccio un and bit a bit per selezionare il bit nella posizone nella posizione dell'offset
 	 	offsetp = (bitmap->entries[bmkey.entry_num] & bmask); 
 
-		// Se dobbiamo verificare "status=1", result deve essere ">0", altrimenti deve essere "==0"
+		// JM Se dobbiamo verificare "status=1", result deve essere ">0", altrimenti deve essere "==0"
 		if(status == 1) {
 			if(offsetp > 0) return i;
 		}else{
