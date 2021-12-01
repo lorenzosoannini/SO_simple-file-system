@@ -16,6 +16,5 @@ BitMapEntryKey BitMap_blockToIndex(int num) {
 	
 	return obstructionum;
 	
-	
 }
 
