@@ -68,3 +68,24 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 	
 	return;
 }
+// JMlegge il blocco nella posizione block_num
+// ritorna -1 se è il blocco è libero come dice nella bitmap
+// 0 altrimenti
+int DiskDriver_readBlock(DiskDriver* disk, void * dest, int block_num){
+
+	//JM ho bisogno di inizializzare una bitmap per utilizzare la bitmap get 
+	BitMap bitmap;
+	bitmap.num_bits = disk->header->bitmap_entries * 8;
+	bitmap.entries = disk->bitmap_data;
+	
+	//utilizzo la bitmapget
+	int ret = BitMap_get(&bitmap, block_num, 0);
+	// se è uguale a block_num il blocco è libero quindi restituisco -1;
+	if (ret ==block_num) return -1;
+	// assegno a src il blocco block_num
+	const void * src = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
+	//inserisco in dest il valore del blocco block_num
+	memcpy(dest, src, BLOCK_SIZE);
+	
+	return 0;
+}
