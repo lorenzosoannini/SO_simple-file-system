@@ -21,7 +21,19 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 			return;
 		}
 		
+		/*
+		JM
+		L'ERRORE DI BUS è possibile risolverlo tramite la funzione posix_fallocate()
+		
+		La funzione posix_fallocate () deve garantire che qualsiasi spazio di archiviazione richiesto per i dati di file regolari a partire da offset e continuando per len byte sia allocato sul supporto di archiviazione del file system. 
+		
+		Se posix_fallocate() viene restituito correttamente, le successive scritture sui dati del file specificati non falliranno a causa della mancanza di spazio libero sul supporto di memorizzazione del file system.
+
+		*/
+		
+		 posix_fallocate(f, 0, sizeof(DiskHeader) + num_blocks + num_blocks*BLOCK_SIZE);
 		//assegno i valori int fd e DiskHeader header 
+		
 		disk->fd = f;
 		disk->header = (DiskHeader*) mmap(0, sizeof(DiskHeader) + num_blocks + (num_blocks*BLOCK_SIZE), PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
 		
@@ -34,6 +46,8 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 			return;
 		}
 		
+		// risoluzione errore di bus
+		posix_fallocate(f, 0, sizeof(DiskHeader) + num_blocks + num_blocks*BLOCK_SIZE);
 		
 		disk->fd=f;
 		//creo un nuovo DiskHeader e lo riempo nella bitmap n
