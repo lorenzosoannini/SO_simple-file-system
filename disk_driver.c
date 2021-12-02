@@ -12,6 +12,8 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 	
 	//variabile f dove memorizzo il file
 	int f;
+	//JM devo verificare se il blocco da leggere è maggiore del numero di blocchi block_num 
+	if(block_num >= disk->header->num_blocks) return -1;
 	
 	//JM se il file esiste
 	if(!access(filename, F_OK)) {
@@ -86,6 +88,36 @@ int DiskDriver_readBlock(DiskDriver* disk, void * dest, int block_num){
 	const void * src = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
 	//inserisco in dest il valore del blocco block_num
 	memcpy(dest, src, BLOCK_SIZE);
-	
+	// ritorno 0 se è andato tutto a buon fine
 	return 0;
+}
+// JM scrive un blocco in posizione block_num  e modifica consapevolmente la bitmap e ritorna -1 in caso di errore
+
+int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
+	
+	// Come nella funzione read il numero del blocco da scrivere non deve essere è maggiore del numero di blocchi block_num
+	if(block_num > disk->header->num_blocks) return -1;
+ 
+	// come in readBlock inizializzo una bitmap che mi permette di utilizzare la bitmap_get() e la bitmap_set()
+	BitMap bitmap;
+	bitmap.num_bits = disk->header->bitmap_entries * 8;
+	bitmap.entries = disk->bitmap_data;
+	
+	// Se il blocco è libero allora decremento free_block
+	//utilizzo la bitmapget
+	int ret = BitMap_get(&bitmap, block_num, 0);
+	// se è diverso  a block_num il blocco è occupato quindi restituisco -1;
+	if (ret !=block_num) return -1;
+	// il blocco è libero quindi ci posso scrivere, decremento i blocchi liberi nell header
+	else disk->header->free_blocks--;
+
+
+	//setto nella bitmap il block_num occupato
+	BitMap_set(&bitmap, block_num, 1);
+	//setto destinatario il blocco di block_num
+	const void * dest = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
+	// Scrivo il contenuto di src in dest ovvero il blocco di block_num block_num
+	memcpy(dest, src, BLOCK_SIZE);		
+
+  return 0;
 }
