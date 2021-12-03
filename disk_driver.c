@@ -125,7 +125,7 @@ int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
 
   return 0;
 }
-
+//JM Ritorna il primo blocco libero che incontro da start
 int DiskDriver_getFreeBlock(DiskDriver* disk, int start) {
 	
 	// Creo la bitmap che andrò ad utilizzare per la BitMap_get()
@@ -134,9 +134,36 @@ int DiskDriver_getFreeBlock(DiskDriver* disk, int start) {
 	bmap.entries = disk->bitmap_data;
 
 	// JM attravero la bitmap_get posso trovare il primo blocco libero da start
-	int ret = BitMap_get(&bitmap, start, 0);
+	int ret = BitMap_get(&bmap, start, 0);
 	return ret;
 	
 }
+//JM questa funzione mi permette di liberare il blocco in block_num del diskDriver
+
+int DiskDriver_freeBlock(DiskDriver* disk, int block_num) {
+	
+	// JM Come sempre creo la bitmap di appoggio che utilizzero per la funzione bitmapGet()
+	BitMap bmap;
+	bmap.num_bits = disk->header->bitmap_entries * 8;
+	bmap.entries = disk->bitmap_data;
+	
+	// JM verifico che il mio block_num sia all'interno del numero di blocchi nel disk header altrimenti restituisco -1
+	if(block_num > disk->header->num_blocks) return -1;
+	
+	// JM verifico se  il blocco in block_num non sia vuoto utilizzo la getFreeBlock() per vedere quale sia il primo blocco libero
+	 
+	int ret = DiskDriver_getFreeBlock(disk,block_num-1);
+	// JM se il primo blocco libero non è block_num incremento il valore dei free_blocks nel disk->header,
+	// in caso contrario non è necessario aumentarlo
+	if(ret != block_num) disk->header->free_blocks++;
+
+	// JM per impostare il blocco Libero utilizzo la BitMapSet
+	BitMap_set(&bmap, block_num, 0);
+	disk->bitmap_data = bmap.entries;
+	
+	return 0;
+}
+
+
 
 
