@@ -125,6 +125,12 @@ int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
 	const void * dest = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
 	// Scrivo il contenuto di src in dest ovvero il blocco di block_num block_num
 	memcpy(dest, src, BLOCK_SIZE);		
+	
+	
+	// JM Faccio il flush del driver
+	ret = DiskDriver_flush(disk);
+	//controllo fallimento del diskdriver_flush
+	if (ret == 0) return -1;
 
   return 0;
 }
@@ -164,6 +170,11 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num) {
 	BitMap_set(&bmap, block_num, 0);
 	disk->bitmap_data = bmap.entries;
 	
+	//JM faccio il flush del driver
+	ret = DiskDriver_flush(disk);
+	//controllo fallimento del diskdriver_flush
+	if (ret == 0) return -1;
+	
 	return 0;
 }
 
@@ -186,6 +197,7 @@ int DiskDriver_flush(DiskDriver* disk) {
 	*/ 
 	
 	// Utilizzo il flag MS_SYNC che richiede un aggiornamento e aspetta il suo completamento
+	// Ritorna -1 se il msync è fallito 
 	return msync(disk->header, disk_size, MS_SYNC);
 
 }
