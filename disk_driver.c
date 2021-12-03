@@ -1,4 +1,7 @@
 #include "disk_driver.h"
+#include <sys/mman.h>
+#include <stdio.h>
+#include <string.h>
 
 //JM Apre il file (o lo crea) 
 // alloca lo spazio necessario nel disco
@@ -164,6 +167,27 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num) {
 	return 0;
 }
 
+// JM aggiorna i dati (fa il flush del mmaps)
 
+int DiskDriver_flush(DiskDriver* disk) {
+	
+	// JM assegno a disk_size la lunghezza della memoria da sincronizzare
+	int disk_size = sizeof(DiskHeader) + disk->header->bitmap_entries + (disk->header->num_blocks*BLOCK_SIZE) ;
+	/*
+	JM Utilizzo mysync() che mi permette di sincronizzare la memoria modificata e il file collegato dalla mmap()
+	
+	msync() cancella le modifiche apportate alla copia interna di un file che
+       è stato mappato in memoria usando mmap (2) nel filesystem.
+       Senza l'uso di questa chiamata, non vi è alcuna garanzia che le modifiche siano
+       riscritto prima che munmap (2) venga richiamato. Per essere più precisi, il
+       parte del file che corrisponde all'area di memoria a partire da
+       addr e con length length viene aggiornato.
+       
+	*/ 
+	
+	// Utilizzo il flag MS_SYNC che richiede un aggiornamento e aspetta il suo completamento
+	return msync(disk->header, disk_size, MS_SYNC);
+
+}
 
 
