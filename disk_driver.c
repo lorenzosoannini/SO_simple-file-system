@@ -16,7 +16,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 	//variabile f dove memorizzo il file
 	int f;
 	//JM devo verificare se il blocco da leggere è maggiore del numero di blocchi block_num 
-	if(block_num >= disk->header->num_blocks) return -1;
+	if(num_blocks >= disk->header->num_blocks) return -1;
 	
 	//JM se il file esiste
 	if(!access(filename, F_OK)) {
@@ -130,7 +130,10 @@ int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
 	// JM Faccio il flush del driver
 	ret = DiskDriver_flush(disk);
 	//controllo fallimento del diskdriver_flush
-	if (ret == 0) return -1;
+	if (ret == -1) return -1;
+	
+	//JM aggiorno il first_free_block con la funzione DiskDriver_getFreeBlock
+	disk->header->first_free_block = DiskDriver_getFreeBlock(disk,0);
 
   return 0;
 }
@@ -175,6 +178,10 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num) {
 	//controllo fallimento del diskdriver_flush
 	if (ret == 0) return -1;
 	
+	
+	// JM è necessario cambiare il first_free_block se il block num è minore di disk->header->first free block
+	
+	if(block_num < disk->header->first_free_block) disk->header->first_free_block = block_num;
 	return 0;
 }
 
