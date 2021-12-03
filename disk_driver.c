@@ -125,3 +125,18 @@ int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
 
   return 0;
 }
+
+int DiskDriver_getFreeBlock(DiskDriver* disk, int start) {
+	
+	// Creo la bitmap che andrò ad utilizzare per la BitMap_get()
+	BitMap bmap;
+	bmap.num_bits = disk->header->bitmap_entries * 8;
+	bmap.entries = disk->bitmap_data;
+
+	// JM attravero la bitmap_get posso trovare il primo blocco libero da start
+	int ret = BitMap_get(&bitmap, start, 0);
+	return ret;
+	
+}
+
+
