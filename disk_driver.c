@@ -74,6 +74,10 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 // ritorna -1 se è il blocco è libero come dice nella bitmap
 // 0 altrimenti
 int DiskDriver_readBlock(DiskDriver* disk, void * dest, int block_num){
+	
+	//JM devo verificare che il blocco di numeri sia minore del blocco di numeri effettivo altrimenti restituisco un errore
+	if(block_num >= disk->header->num_blocks) return -1;
+
 
 	//JM ho bisogno di inizializzare una bitmap per utilizzare la bitmap get 
 	BitMap bitmap;
