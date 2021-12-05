@@ -44,6 +44,15 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		
 		disk->fd = f;
 		disk->header = (DiskHeader*) mmap(0, sizeof(DiskHeader) + num_blocks + (num_blocks*BLOCK_SIZE), PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
+
+		// ls setto a zero i bits della BitMap
+		int i;
+		BitMap bitmap;
+		bitmap.num_bits = fs->disk->header->bitmap_entries * 8;
+		bitmap.entries = fs->disk->bitmap_data;
+
+		for(i = 0; i < bitmap.num_bits; i++)
+			BitMap_set(&bitmap, i, 0);
 		
 		
 	}else{
@@ -68,6 +77,15 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		disk->header->bitmap_blocks = blocks;
 		disk->header->bitmap_entries = num_blocks;
 		disk->header->free_blocks = num_blocks;
+
+		// ls setto a zero i bits della BitMap
+		int i;
+		BitMap bitmap;
+		bitmap.num_bits = fs->disk->header->bitmap_entries * 8;
+		bitmap.entries = fs->disk->bitmap_data;
+
+		for(i = 0; i < bitmap.num_bits; i++)
+			BitMap_set(&bitmap, i, 0);
 	}
 	lseek(f, 0, SEEK_SET);
 	// Memorizzo in bitmap_data il puntatore alla mmap saltando lo spazio dedicato a DiskHeader

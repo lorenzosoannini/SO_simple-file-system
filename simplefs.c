@@ -3,10 +3,32 @@
 
 //JM Dichiarazione funzioni e descrizioni di tali
 
-
+// ls
 // inizializza un file system su un disco già creato
 // restituisce un handle alla directory di primo livello memorizzata nel primo blocco
-DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk);
+DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
+
+    // ls inizializzo la struttura fs con il disco passato alla funzione
+    fs->disk = disk;
+
+    // formatto il fs per creare le strutture iniziali
+    SimpleFS_format(fs);
+
+    // alloco una struttura data DirectoryHandle a ne inizializzo i campi
+    DirectoryHandle* d_handle = malloc(sizeof(DirectoryHandle));
+
+    d_handle->sfs = fs; // ls setto il filesystem corrente
+    FirstDirectoryBlock* firstdirectoryblock_ = malloc(sizeof(FirstDirectoryBlock));
+	DiskDriver_readBlock(disk, firstdirectoryblock_, 0); // ls leggo il primo blocco del disco
+	directory_handle->dcb = firstdirectoryblock_; // ls assegno il puntatore al primo blocco della directory
+	directory_handle->directory = NULL; // ls non ha una directory padre
+	directory_handle->current_block = &(firstdirectoryblock_->header);
+	directory_handle->pos_in_dir = 0;
+	directory_handle->pos_in_block = firstdirectoryblock_->fcb.block_in_disk;
+
+
+    return d_handle;
+}
 
 // crea le strutture iniziali, la directory di primo livello
 // ha il nome "/" e il suo blocco di controllo è nella prima posizione
