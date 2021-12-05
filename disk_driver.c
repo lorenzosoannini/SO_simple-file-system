@@ -1,7 +1,10 @@
 #include "disk_driver.h"
 #include <sys/mman.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
+
 
 //JM Apre il file (o lo crea) 
 // alloca lo spazio necessario nel disco
@@ -16,7 +19,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 	//variabile f dove memorizzo il file
 	int f;
 	//JM devo verificare se il blocco da leggere è maggiore del numero di blocchi block_num 
-	if(num_blocks >= disk->header->num_blocks) return -1;
+	if(num_blocks >= disk->header->num_blocks) return;
 	
 	//JM se il file esiste
 	if(!access(filename, F_OK)) {
@@ -60,7 +63,9 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		
 		
 		disk->header->num_blocks = num_blocks;
-		disk->header->bitmap_blocks = count_blocks(num_blocks);
+		int blocks = num_blocks % BLOCK_SIZE == 0 ? num_blocks / BLOCK_SIZE : ( num_blocks / BLOCK_SIZE ) + 1;
+		
+		disk->header->bitmap_blocks = blocks;
 		disk->header->bitmap_entries = num_blocks;
 		disk->header->free_blocks = num_blocks;
 	}
@@ -92,7 +97,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void * dest, int block_num){
 	// se è uguale a block_num il blocco è libero quindi restituisco -1;
 	if (ret ==block_num) return -1;
 	// assegno a src il blocco block_num
-	const void * src = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
+	 void* restrict src = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
 	//inserisco in dest il valore del blocco block_num
 	memcpy(dest, src, BLOCK_SIZE);
 	// ritorno 0 se è andato tutto a buon fine
@@ -122,7 +127,7 @@ int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
 	//setto nella bitmap il block_num occupato
 	BitMap_set(&bitmap, block_num, 1);
 	//setto destinatario il blocco di block_num
-	const void * dest = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
+	 char* dest = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
 	// Scrivo il contenuto di src in dest ovvero il blocco di block_num block_num
 	memcpy(dest, src, BLOCK_SIZE);		
 	

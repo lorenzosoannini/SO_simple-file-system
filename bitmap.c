@@ -21,8 +21,15 @@ BitMapEntryKey BitMap_blockToIndex(int num) {
 // ls operazione inversa a BitMap_blockToIndex: la moltiplicazione per 8 calcola il blocco nella memoria e poi
 // aggiunge l'offset per trovare la poizione esatta
 // converts a bit to a linear index
+
 int BitMap_indexToBlock(int entry, uint8_t bit_num){
-    return (entry.entry_num * 8) + entry.bit_num;
+
+    //JM necessaria BitMapEntryKey di base
+    BitMapEntryKey obstructionum;
+    obstructionum.entry_num = entry;
+    obstructionum.bit_num = bit_num;
+    
+    return (obstructionum.entry_num * 8) + obstructionum.bit_num;
 }
 
 // JM ritorna l'indice del del primo bit che ha lo status "status" 
@@ -36,20 +43,20 @@ int BitMap_get(BitMap* bmap, int start, int status){
 	int offsetp;
 	
 	//JM fix è necessario che lo start non si maggiore sia all'interno dell'array 
-	if(start > bitmap->num_bits) return -1;
+	if(start > bmap->num_bits) return -1;
 
 	 
-	for(i = start; i<= bitmap->num_bits-1; i++) {
+	for(i = start; i<= bmap->num_bits-1; i++) {
 
 		
 		
 		BitMapEntryKey bmkey = BitMap_blockToIndex(i);
 		
 		 // JM setta una maschera shiftando 1 nella posizione dell'offset
-		uint8_t bmask = 1 << (7 - bmek.bit_num);
+		uint8_t bmask = 1 << (7 - bmkey.bit_num);
 		
 		// JM faccio un and bit a bit per selezionare il bit nella posizone nella posizione dell'offset
-	 	offsetp = (bitmap->entries[bmkey.entry_num] & bmask); 
+	 	offsetp = (bmap->entries[bmkey.entry_num] & bmask); 
 
 		// JM Se dobbiamo verificare "status=1", result deve essere ">0", altrimenti deve essere "==0"
 		if(status == 1) {
@@ -63,7 +70,7 @@ int BitMap_get(BitMap* bmap, int start, int status){
 //ls
 // sets the bit at index pos in bmap to status
 int BitMap_set(BitMap* bmap, int pos, int status){
-    if(pos > bitmap->num_bits)  //se pos > num_bits la posizione "pos" indica un blocco invalido
+    if(pos > bmap->num_bits)  //se pos > num_bits la posizione "pos" indica un blocco invalido
         return -1;
 
     BitMapEntryKey bmentry = BitMap_blockToIndex(pos); //prendo l'indice della posizione "pos"
@@ -71,9 +78,9 @@ int BitMap_set(BitMap* bmap, int pos, int status){
 
 	// setto la maschera dopo il controllo di status
 	if(status)
-		bitmap->entries[bmentry.entry_num] |= mask;
+		bmap->entries[bmentry.entry_num] |= mask;
 	else
-    	bitmap->entries[bmentry.entry_num] &= ~(mask);
+    	bmap->entries[bmentry.entry_num] &= ~(mask);
 
     return status;
 }
