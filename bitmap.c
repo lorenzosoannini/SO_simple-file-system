@@ -23,13 +23,8 @@ BitMapEntryKey BitMap_blockToIndex(int num) {
 // converts a bit to a linear index
 
 int BitMap_indexToBlock(int entry, uint8_t bit_num){
-
-    //JM necessaria BitMapEntryKey di base
-    BitMapEntryKey obstructionum;
-    obstructionum.entry_num = entry;
-    obstructionum.bit_num = bit_num;
-    
-    return (obstructionum.entry_num * 8) + obstructionum.bit_num;
+	
+    return (entry * 8) + bit_num;
 }
 
 // JM ritorna l'indice del del primo bit che ha lo status "status" 
