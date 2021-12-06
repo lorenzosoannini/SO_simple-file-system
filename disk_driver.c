@@ -48,8 +48,8 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		// ls setto a zero i bits della BitMap
 		int i;
 		BitMap bitmap;
-		bitmap.num_bits = fs->disk->header->bitmap_entries * 8;
-		bitmap.entries = fs->disk->bitmap_data;
+		bitmap.num_bits = disk->header->bitmap_entries * 8;
+		bitmap.entries = disk->bitmap_data;
 
 		for(i = 0; i < bitmap.num_bits; i++)
 			BitMap_set(&bitmap, i, 0);
@@ -81,8 +81,8 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		// ls setto a zero i bits della BitMap
 		int i;
 		BitMap bitmap;
-		bitmap.num_bits = fs->disk->header->bitmap_entries * 8;
-		bitmap.entries = fs->disk->bitmap_data;
+		bitmap.num_bits = disk->header->bitmap_entries * 8;
+		bitmap.entries = disk->bitmap_data;
 
 		for(i = 0; i < bitmap.num_bits; i++)
 			BitMap_set(&bitmap, i, 0);

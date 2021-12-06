@@ -1,4 +1,5 @@
 #include "simplefs.h"
+#include <stdlib.h>
 
 
 //JM Dichiarazione funzioni e descrizioni di tali
@@ -20,11 +21,11 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
     d_handle->sfs = fs; // ls setto il filesystem corrente
     FirstDirectoryBlock* firstdirectoryblock_ = malloc(sizeof(FirstDirectoryBlock));
 	DiskDriver_readBlock(disk, firstdirectoryblock_, 0); // ls leggo il primo blocco del disco
-	directory_handle->dcb = firstdirectoryblock_; // ls assegno il puntatore al primo blocco della directory
-	directory_handle->directory = NULL; // ls non ha una directory padre
-	directory_handle->current_block = &(firstdirectoryblock_->header);
-	directory_handle->pos_in_dir = 0;
-	directory_handle->pos_in_block = firstdirectoryblock_->fcb.block_in_disk;
+	d_handle->dcb = firstdirectoryblock_; // ls assegno il puntatore al primo blocco della directory
+	d_handle->directory = NULL; // ls non ha una directory padre
+	d_handle->current_block = &(firstdirectoryblock_->header);
+	d_handle->pos_in_dir = 0;
+	d_handle->pos_in_block = firstdirectoryblock_->fcb.block_in_disk;
 
 
     return d_handle;
@@ -35,7 +36,9 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 // cancella anche la bitmap dei blocchi occupati sul disco
 // il blocco_directory_corrente è memorizzato nella cache nella struttura SimpleFS
 // e imposta la directory di livello superiore
-void SimpleFS_format(SimpleFS* fs);
+void SimpleFS_format(SimpleFS* fs){
+    return;
+}
 
 // crea un file vuoto nella directory d
 // restituisce null in caso di errore (file esistente, nessun blocco libero)
