@@ -38,6 +38,10 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 // il blocco_directory_corrente è memorizzato nella cache nella struttura SimpleFS
 // e imposta la directory di livello superiore
 void SimpleFS_format(SimpleFS* fs){
+
+    // ls se il filesystem passato è invalido non faccio nulla
+    if(fs == NULL) return;
+
     // ls creo un file name per il disk
     char disk_filename[255];
 	sprintf(disk_filename, "test/%d.txt", time(NULL));
