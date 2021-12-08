@@ -47,7 +47,7 @@ void SimpleFS_format(SimpleFS* fs){
 	sprintf(disk_filename, "test/%d.txt", time(NULL));
 
     // ls inizializzo il DiskDriver per il disco corrente
-    DiskDriver_init(fs->disk, , fs->disk->header->num_blocks);
+//    DiskDriver_init(fs->disk, fs->disk->header->num_blocks);
 
     // ls creo il primo blocco della top level directory "/"
     FirstDirectoryBlock* f_d_block = malloc(sizeof(FirstDirectoryBlock));
@@ -59,16 +59,16 @@ void SimpleFS_format(SimpleFS* fs){
     // ls creo il corrispondente FCB per "/"
     f_d_block->fcb.directory_block = -1;
 	f_d_block->fcb.block_in_disk = fs->disk->header->first_free_block;
-    f_d_block->fcb.name = "/";
+   // f_d_block->fcb.name = "/0";
     f_d_block->fcb.size_in_bytes = sizeof(FirstDirectoryBlock);
-    f_d_block->fcb.size_in_blocks = count_blocks(f_d_block->fcb.size_in_bytes);
+  //  f_d_block->fcb.size_in_blocks = count_blocks(f_d_block->fcb.size_in_bytes);
     f_d_block->fcb.is_dir = 1;
 	f_d_block->num_entries = 0;
 
-    memset(first_directory_block->file_blocks, 0, sizeof(first_directory_block->file_blocks));
+  //  memset(first_directory_block->file_blocks, 0, sizeof(first_directory_block->file_blocks));
 
     // ls chiamo le funzioni del DiskDriver per memorzzare tutto nel disco
-    DiskDriver_writeBlock(fs->disk, first_directory_block, fs->disk->header->first_free_block);
+ //   DiskDriver_writeBlock(fs->disk, first_directory_block, fs->disk->header->first_free_block);
 	DiskDriver_flush(fs->disk);	
 }
 

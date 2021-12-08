@@ -1,13 +1,14 @@
 #pragma once
 #include <stdint.h>
+
 typedef struct{
-  int num_bits;
-  char* entries;
+	int num_bits;
+	char* entries;
 }  BitMap;
 
 typedef struct {
-  int entry_num;
-  char bit_num;
+	int entry_num;
+	char bit_num;
 } BitMapEntryKey;
 
 // converts a block index to an index in the array,
@@ -15,7 +16,7 @@ typedef struct {
 BitMapEntryKey BitMap_blockToIndex(int num);
 
 // converts a bit to a linear index
-int BitMap_indexToBlock(int entry, uint8_t bit_num);
+int BitMap_indexToBlock(BitMapEntryKey entry);
 
 // returns the index of the first bit having status "status"
 // in the bitmap bmap, and starts looking from position start

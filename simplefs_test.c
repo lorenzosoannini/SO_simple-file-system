@@ -1,17 +1,30 @@
 #include "bitmap.c" 
 #include "disk_driver.c"
-#include "simplefs.c"
 #include <stdio.h>
+#include <string.h>
+#include <sys/stat.h> 
+#include <fcntl.h> 
+#include <unistd.h>
+#include <stdlib.h>
 
 int choose;
+int i;
+int ret;
+
+// binary print from stackoverflow
+void binary_print(char* str) {
+	int i, j;
+	for(i = 0; i < strlen(str); i++) {
+		char c = str[i];
+		for (j = 7; j >= 0; j--) {
+	      printf("%d", !!((c >> j) & 0x01)); 
+	  }
+	} 
+}
 
 //JM first look to bitmap test
 int main(int agc, char** argv) {
-  printf("FirstBlock size %ld\n", sizeof(FirstFileBlock));
-  printf("DataBlock size %ld\n", sizeof(FileBlock));
-  printf("FirstDirectoryBlock size %ld\n", sizeof(FirstDirectoryBlock));
-  printf("DirectoryBlock size %ld\n", sizeof(DirectoryBlock));
-  printf("\n");
+		
   	printf("░██████╗██╗███╗░░░███╗██████╗░██╗░░░░░███████╗\n");
 	printf("██╔════╝██║████╗░████║██╔══██╗██║░░░░░██╔════╝\n");
 	printf("╚█████╗░██║██╔████╔██║██████╔╝██║░░░░░█████╗░░\n");
@@ -51,16 +64,56 @@ int main(int agc, char** argv) {
 	printf("\n");
   	printf("Hai scelto di testare la BitMap\n");
   	
-  	// Eseguo il Test per la funzione BitMap_blockToIndex
+  	// JM Eseguo il Test per la funzione BitMap_blockToIndex
 	int num = 420;
 	printf("\n--- Test BitMap_blockToIndex(%d)\n", num);   
 	BitMapEntryKey block = BitMap_blockToIndex(num);
 	printf("    La posizione del blocco è %d, ovvero la entry_num %d al bit_num %d\n", num, block.entry_num, block.bit_num);
 	
-	// Test BitMap_indexToBlock 
+	// JM Eseguo il Test BitMap_indexToBlock 
+	
 	printf("\n\n--- Test BitMap_indexToBlock(block)");
-	int pos = BitMap_indexToBlock(block.entry_num,block.bit_num); 
+	int pos = BitMap_indexToBlock(block); 
 	printf("\n    Abbiamo la entry_num %d e il bit_num %d, ovvero la posizione %d\n", block.entry_num, block.bit_num, pos);
+	
+	//JM Eseguo il test per la BitMap_set() per il quale ho bisogno di un DiskDriver e bitmap
+	DiskDriver disk;
+	BitMap bitmap;
+	
+	//inizializzo il DiskDriver e la bitmap
+	DiskDriver_init(&disk, "file_test/testosterone.txt", 50); 
+	bitmap.num_bits = disk.header->bitmap_entries * 8;
+	bitmap.entries = disk.bitmap_data;
+	
+ 	//setto tutti 0 nella bitmap
+	for(i = 0; i < bitmap.num_bits; i++)
+		BitMap_set(&bitmap, i, 0);
+		
+	printf("\n --- Test BitMap_set(BitMap* bitmap, int pos, int status) : \n");
+	printf("\n --- Output bitmap entries before BitMap_set()  : ");
+	if (strlen(bitmap.entries) == 0) printf("00000000\n");
+	ret =  BitMap_set(&bitmap,3, 1);
+	if (ret != -1 ) { printf("\n   Output after Bitmap_set(3, 1) :");
+			   binary_print(bitmap.entries);
+			   }
+	else printf("TEST FAILED\n");
+	ret =  BitMap_set(&bitmap,3, 0);
+	if (ret != -1 ) { printf("\n   Output after Bitmap_set(3, 0) :");
+			   binary_print(bitmap.entries);
+			   if (strlen(bitmap.entries) == 0) printf("00000000");
+			   }
+	else printf("TEST FAILED\n");
+	ret =  BitMap_set(&bitmap,4, 1);
+	if (ret != -1 ) { printf("\n   Output after Bitmap_set(4, 1) :");
+			   binary_print(bitmap.entries);
+			   }
+	else printf("TEST FAILED");
+	ret =  BitMap_set(&bitmap,2, 1);
+	if (ret != -1 ) { printf("\n   Output after Bitmap_set(2, 1) :");
+			   binary_print(bitmap.entries);
+			   }
+	else printf("TEST FAILED\n");
+	printf("\n"); 
 
   	
   	
@@ -75,7 +128,7 @@ int main(int agc, char** argv) {
 	printf("╚═════╝░╚═╝╚═════╝░╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝╚═╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝\n");
 	printf("Hai scelto di testare il DiskDriver\n");
   }
-  else {
+  else if (choose ==3){
   	
 	printf("░██████╗██╗███╗░░░███╗██████╗░██╗░░░░░███████╗███████╗░██████╗\n");
 	printf("██╔════╝██║████╗░████║██╔══██╗██║░░░░░██╔════╝██╔════╝██╔════╝\n");
@@ -84,5 +137,7 @@ int main(int agc, char** argv) {
 	printf("██████╔╝██║██║░╚═╝░██║██║░░░░░███████╗███████╗██║░░░░░██████╔╝\n");
 	printf("╚═════╝░╚═╝╚═╝░░░░░╚═╝╚═╝░░░░░╚══════╝╚══════╝╚═╝░░░░░╚═════╝░\n");
 	printf("Hai scelto di testare il SimpleFS\n");
+		
+
   }
 }
