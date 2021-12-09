@@ -13,12 +13,15 @@ int ret;
 
 // binary print from stackoverflow
 void binary_print(char* str) {
+	 if (strlen(str) == 0) printf("00000000");
+	else{
 	int i, j;
 	for(i = 0; i < strlen(str); i++) {
 		char c = str[i];
 		for (j = 7; j >= 0; j--) {
 	      printf("%d", !!((c >> j) & 0x01)); 
 	  }
+	}
 	} 
 }
 
@@ -90,18 +93,17 @@ int main(int agc, char** argv) {
 		BitMap_set(&bitmap, i, 0);
 		
 	printf("\n\n--- Test BitMap_set(BitMap* bitmap, int pos, int status) :");
-	printf("\n    Output bitmap entries before BitMap_set()  : ");
-	if (strlen(bitmap.entries) == 0) printf("00000000\n");
+	printf("\n    Output before BitMap_set()    :");
+	 binary_print(bitmap.entries);
 	ret =  BitMap_set(&bitmap,3, 1);
-	if (ret != -1 ) { printf("    Output after Bitmap_set(3, 1) :");
+	if (ret != -1 ) { printf("\n    Output after Bitmap_set(3, 1) :");
 			   binary_print(bitmap.entries);
 			   }
 	else printf("TEST FAILED\n");
 	ret =  BitMap_set(&bitmap,3, 0);
 	if (ret != -1 ) { printf("\n    Output after Bitmap_set(3, 0) :");
-			   binary_print(bitmap.entries);
-			   if (strlen(bitmap.entries) == 0) printf("00000000");
-			   }
+			   binary_print(bitmap.entries); }
+			  
 	else printf("TEST FAILED\n");
 	ret =  BitMap_set(&bitmap,4, 1);
 	if (ret != -1 ) { printf("\n    Output after Bitmap_set(4, 1) :");
@@ -167,9 +169,6 @@ int main(int agc, char** argv) {
 		printf("\n    Output bitmap entries before DiskDriver_writeBlock() : ");
 		binary_print(bitmap.entries);
 		
-		 if (strlen(bitmap.entries) == 0) printf("00000000");
-		 else printf("TEST FAILED\n");
-		
 		ret =  DiskDriver_writeBlock(&disk, "Panino",1);
 		if(ret == 0) printf("\n    Scrittura <Panino> sul blocco 1 con SUCCESSO : ");
 		else printf("TEST FAILED\n");
@@ -194,13 +193,12 @@ int main(int agc, char** argv) {
 		binary_print(bitmap.entries); 
 		
 		printf("\n");
+		
 	//JM effettuo il test DiskDriver_readBlock()
 		 
 		printf("\n--- Test DiskDriver_readBlock()");
 		printf("\n    Output bitmap entries before DiskDriver_readBlock() : ");
 		binary_print(bitmap.entries);
-		
-		 if (strlen(bitmap.entries) == 0) printf("00000000");
 		 
 		void * dest = malloc(BLOCK_SIZE);
 		
@@ -226,11 +224,29 @@ int main(int agc, char** argv) {
 		binary_print(bitmap.entries); 
 		printf("\n");
 		
+		//JM Effettuo test su  DiskDriver_freeBlock
+		printf("\n\n--- Test DiskDriver_freeBlock()");
 		
+		printf("\n     Output bitmap entries before DiskDriver_readBlock() : ");
+		binary_print(bitmap.entries);
 		
-
+		printf("\n     Output bitmap entries after DiskDriver_readBlock(4) : ");
+		ret =  DiskDriver_freeBlock(&disk, 4);
+	   	binary_print(bitmap.entries);
+	   	
+		printf("\n     Output bitmap entries after DiskDriver_readBlock(3) : ");
+		ret =  DiskDriver_freeBlock(&disk, 3);
+		binary_print(bitmap.entries);
 		
-	
+		printf("\n     Output bitmap entries after DiskDriver_readBlock(2) : ");
+		ret =  DiskDriver_freeBlock(&disk, 2);
+		binary_print(bitmap.entries);
+		
+		printf("\n     Output bitmap entries after DiskDriver_readBlock(1) : ");
+		ret =  DiskDriver_freeBlock(&disk, 1);
+		binary_print(bitmap.entries);
+		printf("\n");
+		
   }
   else if (choose ==3){
   	
