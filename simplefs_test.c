@@ -68,13 +68,13 @@ int main(int agc, char** argv) {
 	int num = 420;
 	printf("\n--- Test BitMap_blockToIndex(%d)\n", num);   
 	BitMapEntryKey block = BitMap_blockToIndex(num);
-	printf("    La posizione del blocco è %d, ovvero la entry_num %d al bit_num %d\n", num, block.entry_num, block.bit_num);
+	printf("    La posizione del blocco è %d, ovvero la entry_num %d al bit_num %d", num, block.entry_num, block.bit_num);
 	
 	// JM Eseguo il Test BitMap_indexToBlock 
 	
-	printf("\n\n--- Test BitMap_indexToBlock(block)");
-	int pos = BitMap_indexToBlock(block); 
-	printf("\n    Abbiamo la entry_num %d e il bit_num %d, ovvero la posizione %d\n", block.entry_num, block.bit_num, pos);
+	printf("\n\n--- Test BitMap_indexToBlock(block.entry_num, block.bit_num)");
+	int posizione = BitMap_indexToBlock(block.entry_num, block.bit_num); 
+		printf("\n    Abbiamo la entry %d e il bit %d, ovvero la posizione %d", block.entry_num, block.bit_num, posizione);
 	
 	//JM Eseguo il test per la BitMap_set() per il quale ho bisogno di un DiskDriver e bitmap
 	DiskDriver disk;
@@ -89,7 +89,7 @@ int main(int agc, char** argv) {
 	for(i = 0; i < bitmap.num_bits; i++)
 		BitMap_set(&bitmap, i, 0);
 		
-	printf("\n--- Test BitMap_set(BitMap* bitmap, int pos, int status) :");
+	printf("\n\n--- Test BitMap_set(BitMap* bitmap, int pos, int status) :");
 	printf("\n    Output bitmap entries before BitMap_set()  : ");
 	if (strlen(bitmap.entries) == 0) printf("00000000\n");
 	ret =  BitMap_set(&bitmap,3, 1);

@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <fcntl.h> 
+#include <unistd.h>
+#include <stdlib.h>
 
 //JM Apre il file (o lo crea) 
 // alloca lo spazio necessario nel disco
