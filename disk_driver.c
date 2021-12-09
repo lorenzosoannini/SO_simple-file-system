@@ -86,7 +86,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 int DiskDriver_readBlock(DiskDriver* disk, void * dest, int block_num){
 	
 	//JM devo verificare che il blocco di numeri sia minore del blocco di numeri effettivo altrimenti restituisco un errore
-	if(block_num >= disk->header->num_blocks) return -1;
+	if(block_num > disk->header->num_blocks) return -1;
 
 
 	//JM ho bisogno di inizializzare una bitmap per utilizzare la bitmap get 
@@ -96,6 +96,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void * dest, int block_num){
 	
 	//utilizzo la bitmapget
 	int ret = BitMap_get(&bitmap, block_num, 0);
+	
 	// se è uguale a block_num il blocco è libero quindi restituisco -1;
 	if (ret ==block_num) return -1;
 	// assegno a src il blocco block_num
@@ -109,7 +110,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void * dest, int block_num){
 
 int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
 	
-	// Come nella funzione read il numero del blocco da scrivere non deve essere è maggiore del numero di blocchi block_num
+	// Come nella funzione read il numero del blocco da scrivere non deve essere  maggiore del numero di blocchi block_num
 	if(block_num > disk->header->num_blocks) return -1;
  
 	// come in readBlock inizializzo una bitmap che mi permette di utilizzare la bitmap_get() e la bitmap_set()
@@ -120,6 +121,8 @@ int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
 	// Se il blocco è libero allora decremento free_block
 	//utilizzo la bitmapget
 	int ret = BitMap_get(&bitmap, block_num, 0);
+	char *c = src;
+	
 	// se è diverso  a block_num il blocco è occupato quindi restituisco -1;
 	if (ret !=block_num) return -1;
 	// il blocco è libero quindi ci posso scrivere, decremento i blocchi liberi nell header
@@ -132,12 +135,12 @@ int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
 	char * dest = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
 	// Scrivo il contenuto di src in dest ovvero il blocco di block_num block_num
 	memcpy(dest, src, BLOCK_SIZE);		
-	
+
 	
 	// JM Faccio il flush del driver
 	ret = DiskDriver_flush(disk);
 	//controllo fallimento del diskdriver_flush
-	if (ret == 0) return -1;
+	if (ret == -1) return -1;
 
   return 0;
 }
