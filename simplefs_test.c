@@ -89,31 +89,45 @@ int main(int agc, char** argv) {
 	for(i = 0; i < bitmap.num_bits; i++)
 		BitMap_set(&bitmap, i, 0);
 		
-	printf("\n --- Test BitMap_set(BitMap* bitmap, int pos, int status) : \n");
-	printf("\n --- Output bitmap entries before BitMap_set()  : ");
+	printf("\n--- Test BitMap_set(BitMap* bitmap, int pos, int status) :");
+	printf("\n    Output bitmap entries before BitMap_set()  : ");
 	if (strlen(bitmap.entries) == 0) printf("00000000\n");
 	ret =  BitMap_set(&bitmap,3, 1);
-	if (ret != -1 ) { printf("\n   Output after Bitmap_set(3, 1) :");
+	if (ret != -1 ) { printf("    Output after Bitmap_set(3, 1) :");
 			   binary_print(bitmap.entries);
 			   }
 	else printf("TEST FAILED\n");
 	ret =  BitMap_set(&bitmap,3, 0);
-	if (ret != -1 ) { printf("\n   Output after Bitmap_set(3, 0) :");
+	if (ret != -1 ) { printf("\n    Output after Bitmap_set(3, 0) :");
 			   binary_print(bitmap.entries);
 			   if (strlen(bitmap.entries) == 0) printf("00000000");
 			   }
 	else printf("TEST FAILED\n");
 	ret =  BitMap_set(&bitmap,4, 1);
-	if (ret != -1 ) { printf("\n   Output after Bitmap_set(4, 1) :");
+	if (ret != -1 ) { printf("\n    Output after Bitmap_set(4, 1) :");
 			   binary_print(bitmap.entries);
 			   }
 	else printf("TEST FAILED");
 	ret =  BitMap_set(&bitmap,2, 1);
-	if (ret != -1 ) { printf("\n   Output after Bitmap_set(2, 1) :");
+	if (ret != -1 ) { printf("\n    Output after Bitmap_set(2, 1) :");
 			   binary_print(bitmap.entries);
 			   }
 	else printf("TEST FAILED\n");
 	printf("\n"); 
+	
+	
+	//JM Effettuo il test sulla BitMapGet()
+		printf("\n\n--- Test BitMap_get()");
+		int start = 1, status = 0;    
+		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
+		start = 2, status = 1;
+		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
+		start = 7, status = 0;
+		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
+		start = 3, status = 1;
+		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
+		printf("\n");
+
 
   	
   	
