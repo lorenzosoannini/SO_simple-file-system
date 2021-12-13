@@ -47,7 +47,7 @@ void SimpleFS_format(SimpleFS* fs){
 	sprintf(disk_filename, "test/%d.txt", time(NULL));
 
     // ls inizializzo il DiskDriver per il disco corrente
-//    DiskDriver_init(fs->disk, fs->disk->header->num_blocks);
+    DiskDriver_init(fs->disk, fs->disk->header->num_blocks);
 
     // ls creo il primo blocco della top level directory "/"
     FirstDirectoryBlock* f_d_block = malloc(sizeof(FirstDirectoryBlock));
@@ -72,6 +72,7 @@ void SimpleFS_format(SimpleFS* fs){
 	DiskDriver_flush(fs->disk);	
 }
 
+// ls
 // crea un file vuoto nella directory d
 // restituisce null in caso di errore (file esistente, nessun blocco libero)
 // un file vuoto consiste solo di un blocco di tipo FirstBlock
@@ -80,9 +81,61 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename);
 // legge nell'array di blocchi (preallocato), il nome di tutti i file in una directory
 int SimpleFS_readDir(char** names, DirectoryHandle* d);
 
-
+// ls
 // apre un file nella directory d. Il file dovrebbe esistere
-FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename);
+FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
+
+    // verifico i parametri
+    if (d == NULL || filename == NULL)
+        return NULL;
+
+    // alloco il FileHandle da ritornare
+    FileHandle* f_handle = malloc(sizeof(FileHandle));
+
+    // qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
+    FirstFileBlock* first_f_block = malloc(sizeof(FirstFileBlock));
+
+    // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
+    // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
+    int i, j = 0;
+
+	// scandisco ogni elemento della directory d, che può essere un file o un'altra directory
+	for(i = 0; i < d->dcb->num_entries; i++) {
+		
+		/* // se j è maggiore della dimensione di un blocco della directory
+		if(j >= sizeof(d->dcb->file_blocks)/sizeof(int)) { 
+			DirectoryBlock* d_block;
+
+			// vado a leggere il blocco successivo
+			DiskDriver_readBlock(d->sfs->disk, d_block, d->dcb->header.next_block);
+
+            j = 0;
+		} */
+
+		// leggo il primo blocco del file alla posizione corrente	
+		DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
+
+		// se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
+		if(strcmp(first_f_block->fcb.name, filename) == 0 && first_f_block->fcb.is_dir == 0){
+
+			// Aggiorno i dati del FileHandle
+			f_handle->sfs = d->sfs;
+			f_handle->fcb = first_f_block;
+			f_handle->directory = d->dcb;
+			f_handle->current_block = &(first_f_block->header);
+			f_handle->pos_in_file = 0;
+
+            // restituisco il FileHandle appena creato
+			return f_handle;
+		}
+
+        // incremento indice del blocco
+        j++;
+	}
+
+	// se il ciclo è terminato non ho trovato il file da aprire e quindi restituisco NULL
+	return NULL;
+}
 
 // chiude un file handle ( e lo distrugge)
 int SimpleFS_close(FileHandle* f);
