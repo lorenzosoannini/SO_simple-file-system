@@ -1,4 +1,4 @@
-CCOPTS= -Wall -g -std=gnu99 -Wstrict-prototypes
+CFLAGS= -Wall -g -std=gnu99 -Wstrict-prototypes
 LIBS= 
 CC=gcc
 AR=ar
@@ -11,7 +11,7 @@ HEADERS=bitmap.h\
 	simplefs.h
 
 %.o:	%.c $(HEADERS)
-	$(CC) $(CCOPTS) -c -o $@  $<
+	$(CC) $(CFLAGS) -c -o $@  $<
 
 .phony: clean all
 
@@ -19,7 +19,7 @@ HEADERS=bitmap.h\
 all:	$(BINS) 
 
 so_game: simplefs_test.c $(OBJS) 
-	$(CC) $(CCOPTS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 clean:
 	rm -rf *.o *~  $(BINS)

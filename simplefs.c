@@ -1,5 +1,8 @@
 #include "simplefs.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
 
 
 //JM Dichiarazione funzioni e descrizioni di tali
@@ -44,10 +47,10 @@ void SimpleFS_format(SimpleFS* fs){
 
     // ls creo un file name per il disk
     char disk_filename[255];
-	sprintf(disk_filename, "test/%d.txt", time(NULL));
+	sprintf(disk_filename, "test/%ld.txt", time(NULL));
 
     // ls inizializzo il DiskDriver per il disco corrente
-    DiskDriver_init(fs->disk, fs->disk->header->num_blocks);
+    DiskDriver_init(fs->disk, disk_filename, fs->disk->header->num_blocks);
 
     // ls creo il primo blocco della top level directory "/"
     FirstDirectoryBlock* f_d_block = malloc(sizeof(FirstDirectoryBlock));
@@ -105,7 +108,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 	// devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
     //inizio con il FirstDirectoryBlock
-	for(i = 0; i < fb->num_entries && j < db_len; i++, j++) {
+	for(i = 0; i < d->dcb->num_entries && j < db_len; i++, j++) {
 
         if(d->dcb->file_blocks[j] != -1){
 
@@ -139,7 +142,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
         block_idx = d->dcb->header.next_block;
 
         // #elementi array file_blocks di DirectoryBlock
-        db_len = sizeof(db->file_blocks)/sizeof(int);
+        db_len = sizeof(db.file_blocks)/sizeof(int);
 
         while(i < d->dcb->num_entries){
 

@@ -60,6 +60,8 @@ int BitMap_get(BitMap* bmap, int start, int status){
 			if(offsetp == 0) return i;
 		}
 	}
+
+	return -1;
 }
 
 //ls

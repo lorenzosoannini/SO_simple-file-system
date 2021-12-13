@@ -121,7 +121,6 @@ int DiskDriver_writeBlock(DiskDriver * disk, void * src, int block_num) {
 	// Se il blocco è libero allora decremento free_block
 	//utilizzo la bitmapget
 	int ret = BitMap_get(&bitmap, block_num, 0);
-	char *c = src;
 	
 	// se è diverso  a block_num il blocco è occupato quindi restituisco -1;
 	if (ret !=block_num) return -1;
