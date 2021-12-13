@@ -97,44 +97,96 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
     // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
-    int i, j = 0;
+    int found, i, j = 0;
 
-	// scandisco ogni elemento della directory d, che può essere un file o un'altra directory
-	for(i = 0; i < d->dcb->num_entries; i++) {
-		
-		/* // se j è maggiore della dimensione di un blocco della directory
-		if(j >= sizeof(d->dcb->file_blocks)/sizeof(int)) { 
-			DirectoryBlock* d_block;
+    // #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock) 
+    int db_len = sizeof(d->dcb->file_blocks)/sizeof(int);
 
-			// vado a leggere il blocco successivo
-			DiskDriver_readBlock(d->sfs->disk, d_block, d->dcb->header.next_block);
+	// devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
+
+    //inizio con il FirstDirectoryBlock
+	for(i = 0; i < fb->num_entries && j < db_len; i++, j++) {
+
+        if(d->dcb->file_blocks[j] != -1){
+
+            // leggo il primo blocco del file alla posizione corrente
+            DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
+
+            // se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
+            if(strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir){
+
+                found = 1;
+                break;
+            }
+
+            else{
+
+                free(first_f_block);
+                return NULL;
+            }
+            
+        }
+    }
+
+    // calcolo indice di blocco nel disco
+    int block_idx = d->dcb->fcb.block_in_disk;
+
+    DirectoryBlock db;
+
+    if(!found && i < d->dcb->num_entries){
+        
+        // il nuovo indice di blocck è il blocco successivo al corrente
+        block_idx = d->dcb->header.next_block;
+
+        // #elementi array file_blocks di DirectoryBlock
+        db_len = sizeof(db->file_blocks)/sizeof(int);
+
+        while(i < d->dcb->num_entries){
+
+            DiskDriver_readBlock(d->sfs->disk, &db, block_idx);
 
             j = 0;
-		} */
+            for(; i < d->dcb->num_entries && j < db_len; j++){
 
-		// leggo il primo blocco del file alla posizione corrente	
-		DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
+                if(db.file_blocks[j] != -1){
 
-		// se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
-		if(strcmp(first_f_block->fcb.name, filename) == 0 && first_f_block->fcb.is_dir == 0){
+                    // leggo il primo blocco del file alla posizione corrente
+                    DiskDriver_readBlock(d->sfs->disk, first_f_block, db.file_blocks[j]);
 
-			// Aggiorno i dati del FileHandle
-			f_handle->sfs = d->sfs;
-			f_handle->fcb = first_f_block;
-			f_handle->directory = d->dcb;
-			f_handle->current_block = &(first_f_block->header);
-			f_handle->pos_in_file = 0;
+                    // se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
+                    if(strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir){
 
-            // restituisco il FileHandle appena creato
-			return f_handle;
-		}
+                        found = 1;
+                        break;                        
+                    }
+                    else{
 
-        // incremento indice del blocco
-        j++;
-	}
+                        free(first_f_block);
+                        return NULL;
+                    }
+                    
+                    i++;
+                }
+            }
+        }
+    }
 
-	// se il ciclo è terminato non ho trovato il file da aprire e quindi restituisco NULL
-	return NULL;
+    if(!found){
+
+        free(first_f_block);
+        return NULL;
+    }
+
+    // Aggiorno i dati del FileHandle
+    f_handle->sfs = d->sfs;
+    f_handle->fcb = first_f_block;
+    f_handle->directory = d->dcb;
+    f_handle->current_block = &(first_f_block->header);
+    f_handle->pos_in_file = 0;
+		
+    // restituisco il FileHandle appena popolato
+	return f_handle;
+
 }
 
 // chiude un file handle ( e lo distrugge)
