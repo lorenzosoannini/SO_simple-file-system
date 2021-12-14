@@ -94,6 +94,7 @@ int main(int agc, char** argv) {
 		
 	printf("\n\n--- Test BitMap_set(BitMap* bitmap, int pos, int status) :");
 	printf("\n    Output before BitMap_set()    :");
+	
 	 binary_print(bitmap.entries);
 	ret =  BitMap_set(&bitmap,3, 1);
 	if (ret != -1 ) { printf("\n    Output after Bitmap_set(3, 1) :");
@@ -246,6 +247,8 @@ int main(int agc, char** argv) {
 		ret =  DiskDriver_freeBlock(&disk, 1);
 		binary_print(bitmap.entries);
 		printf("\n");
+		
+		free(dest);
 		
   }
   else if (choose ==3){
