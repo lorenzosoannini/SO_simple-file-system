@@ -9,13 +9,12 @@
 // ls
 // inizializza un file system su un disco già creato
 // restituisce un handle alla directory di primo livello memorizzata nel primo blocco
-DirectoryHandle *SimpleFS_init(SimpleFS *fs, DiskDriver *disk)
-{
+DirectoryHandle *SimpleFS_init(SimpleFS *fs, DiskDriver *disk){
 
     // ls inizializzo la struttura fs con il disco passato alla funzione
     fs->disk = disk;
 
-    // formatto il fs per creare le strutture iniziali
+    // ls formatto il fs per creare le strutture iniziali
     SimpleFS_format(fs);
 
     // alloco una struttura data DirectoryHandle a ne inizializzo i campi
@@ -39,8 +38,7 @@ DirectoryHandle *SimpleFS_init(SimpleFS *fs, DiskDriver *disk)
 // cancella anche la bitmap dei blocchi occupati sul disco
 // il blocco_directory_corrente è memorizzato nella cache nella struttura SimpleFS
 // e imposta la directory di livello superiore
-void SimpleFS_format(SimpleFS *fs)
-{
+void SimpleFS_format(SimpleFS *fs){
 
     // ls se il filesystem passato è invalido non faccio nulla
     if (fs == NULL)
@@ -87,39 +85,39 @@ int SimpleFS_readDir(char **names, DirectoryHandle *d);
 
 // ls
 // apre un file nella directory d. Il file dovrebbe esistere
-FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename)
-{
+FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename){
 
-    // verifico i parametri
+    // ls verifico i parametri
     if (d == NULL || filename == NULL)
         return NULL;
 
-    // alloco il FileHandle da ritornare
+    // ls alloco il FileHandle da ritornare
     FileHandle *f_handle = malloc(sizeof(FileHandle));
 
-    // qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
+    // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
     FirstFileBlock *first_f_block = malloc(sizeof(FirstFileBlock));
 
+    // ls
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
     // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
     int found, i, j = 0;
 
-    // #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
+    // ls #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
     int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
 
-    // devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
+    // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
-    // inizio con il FirstDirectoryBlock
+    // ls inizio con il FirstDirectoryBlock
     for (i = 0; i < d->dcb->num_entries && j < db_len; i++, j++)
     {
 
         if (d->dcb->file_blocks[j] != -1)
         {
 
-            // leggo il primo blocco del file alla posizione corrente
+            // ls leggo il primo blocco del file alla posizione corrente
             DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
 
-            // se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
+            // ls se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
             if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
             {
 
@@ -136,7 +134,7 @@ FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename)
         }
     }
 
-    // calcolo indice di blocco nel disco
+    // ls calcolo indice di blocco nel disco
     int block_idx = d->dcb->fcb.block_in_disk;
 
     DirectoryBlock db;
@@ -144,10 +142,10 @@ FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename)
     if (!found && i < d->dcb->num_entries)
     {
 
-        // il nuovo indice di blocck è il blocco successivo al corrente
+        // ls il nuovo indice di blocck è il blocco successivo al corrente
         block_idx = d->dcb->header.next_block;
 
-        // #elementi array file_blocks di DirectoryBlock
+        // ls #elementi array file_blocks di DirectoryBlock
         db_len = sizeof(db.file_blocks) / sizeof(int);
 
         while (i < d->dcb->num_entries)
@@ -162,10 +160,10 @@ FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename)
                 if (db.file_blocks[j] != -1)
                 {
 
-                    // leggo il primo blocco del file alla posizione corrente
+                    // ls leggo il primo blocco del file alla posizione corrente
                     DiskDriver_readBlock(d->sfs->disk, first_f_block, db.file_blocks[j]);
 
-                    // se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
+                    // ls se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
                     if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
                     {
 
@@ -192,25 +190,26 @@ FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename)
         return NULL;
     }
 
-    // Aggiorno i dati del FileHandle
+    // ls Aggiorno i dati del FileHandle
     f_handle->sfs = d->sfs;
     f_handle->fcb = first_f_block;
     f_handle->directory = d->dcb;
     f_handle->current_block = &(first_f_block->header);
     f_handle->pos_in_file = 0;
 
-    // restituisco il FileHandle appena popolato
+    // ls restituisco il FileHandle appena popolato
     return f_handle;
 }
 
+// ls
 // chiude un file handle ( e lo distrugge)
 int SimpleFS_close(FileHandle *f){
 
-    // nulla da fare
+    // ls nulla da fare
     if (f == NULL)
         return -1;
 
-    // check per non far fallire la seguente free(f->fcb)
+    // ls check per non far fallire la seguente free(f->fcb)
     if (&(f->fcb->header) != f->current_block)
         free(f->current_block);
 
@@ -225,7 +224,7 @@ int SimpleFS_close(FileHandle *f){
 // restituisce il numero di byte scritti
 int SimpleFS_write(FileHandle *f, void *data, int size);
 
-// legge nel file, nella posizione corrente  i byte di dimensione memorizzati nei dati
+// legge nel file, nella posizione corrente i byte di dimensione memorizzati nei dati
 // restituisce il numero di byte letti
 int SimpleFS_read(FileHandle *f, void *data, int size);
 
