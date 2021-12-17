@@ -114,7 +114,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
             DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
 
             // ls se il nome appena letto corrisponde a quello del file che si vuole creare && non è una directory
-            if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
+            if (!strcmp(first_f_block->fcb.name, filename) && !first_f_block->fcb.is_dir)
                 found = 1;
         }
     }
@@ -145,7 +145,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
                     DiskDriver_readBlock(d->sfs->disk, first_f_block, db.file_blocks[j]);
 
                     // ls se il nome appena letto corrisponde a quello del file che si vuole creare && non è una directory
-                    if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
+                    if (!strcmp(first_f_block->fcb.name, filename) && !first_f_block->fcb.is_dir)
                         found = 1;
 
                     i++;
@@ -223,7 +223,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
             DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
 
             // ls se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
-            if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
+            if (!strcmp(first_f_block->fcb.name, filename) && !first_f_block->fcb.is_dir)
                 found = 1;
         }
     }
@@ -254,7 +254,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
                     DiskDriver_readBlock(d->sfs->disk, first_f_block, db.file_blocks[j]);
 
                     // ls se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
-                    if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
+                    if (!strcmp(first_f_block->fcb.name, filename) && !first_f_block->fcb.is_dir)
                         found = 1;
 
                     i++;
