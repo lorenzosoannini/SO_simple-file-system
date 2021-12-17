@@ -17,14 +17,16 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
     // ls formatto il fs per creare le strutture iniziali
     SimpleFS_format(fs);
 
-    // alloco una struttura data DirectoryHandle a ne inizializzo i campi
+    FirstDirectoryBlock* firstdirectoryblock_ = malloc(sizeof(FirstDirectoryBlock));
+    // ls leggo il primo blocco libero del disco (aka il blocco 0 perchè dopo la chiamata a SimpleFS_format)
+    DiskDriver_readBlock(disk, firstdirectoryblock_, fs->disk->header->first_free_block);
+
+    // alloco la struttura DirectoryHandle da ritornare e ne inizializzo i campi
     DirectoryHandle* d_handle = malloc(sizeof(DirectoryHandle));
 
-    d_handle->sfs = fs; // ls setto il filesystem corrente
-    FirstDirectoryBlock* firstdirectoryblock_ = malloc(sizeof(FirstDirectoryBlock));
-    DiskDriver_readBlock(disk, firstdirectoryblock_, 0); // ls leggo il primo blocco del disco
-    d_handle->dcb = firstdirectoryblock_;                // ls assegno il puntatore al primo blocco della directory
-    d_handle->directory = NULL;                          // ls non ha una directory padre
+    d_handle->sfs = fs; // ls setto il filesystem corrente    
+    d_handle->dcb = firstdirectoryblock_; // ls assegno il puntatore al primo blocco della directory root
+    d_handle->directory = NULL; // ls non ha una directory padre
     d_handle->current_block = &(firstdirectoryblock_->header);
     d_handle->pos_in_dir = 0;
     d_handle->pos_in_block = firstdirectoryblock_->fcb.block_in_disk;
