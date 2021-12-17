@@ -78,7 +78,9 @@ void SimpleFS_format(SimpleFS *fs){
 // crea un file vuoto nella directory d
 // restituisce null in caso di errore (file esistente, nessun blocco libero)
 // un file vuoto consiste solo di un blocco di tipo FirstBlock
-FileHandle *SimpleFS_createFile(DirectoryHandle *d, const char *filename);
+FileHandle *SimpleFS_createFile(DirectoryHandle *d, const char *filename){
+    
+}
 
 // legge nell'array di blocchi (preallocato), il nome di tutti i file in una directory
 int SimpleFS_readDir(char **names, DirectoryHandle *d);
@@ -108,25 +110,20 @@ FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename){
     // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
     // ls inizio con il FirstDirectoryBlock
-    for (i = 0; i < d->dcb->num_entries && j < db_len; i++, j++)
-    {
+    for (i = 0; i < d->dcb->num_entries && j < db_len && !found; i++, j++){
 
-        if (d->dcb->file_blocks[j] != -1)
-        {
+        if (d->dcb->file_blocks[j] != -1){
 
             // ls leggo il primo blocco del file alla posizione corrente
             DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
 
             // ls se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
-            if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
-            {
+            if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir){
 
                 found = 1;
-                break;
             }
 
-            else
-            {
+            else{
 
                 free(first_f_block);
                 return NULL;
@@ -139,8 +136,7 @@ FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename){
 
     DirectoryBlock db;
 
-    if (!found && i < d->dcb->num_entries)
-    {
+    if (!found && i < d->dcb->num_entries){
 
         // ls il nuovo indice di blocck è il blocco successivo al corrente
         block_idx = d->dcb->header.next_block;
@@ -148,30 +144,26 @@ FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename){
         // ls #elementi array file_blocks di DirectoryBlock
         db_len = sizeof(db.file_blocks) / sizeof(int);
 
-        while (i < d->dcb->num_entries)
-        {
+        // ls se non è stato ancora trovato proseguo la ricerca nei successivi DirectoryBlock
+        while (i < d->dcb->num_entries && !found){
 
             DiskDriver_readBlock(d->sfs->disk, &db, block_idx);
 
             j = 0;
-            for (; i < d->dcb->num_entries && j < db_len; j++)
-            {
+            for (; i < d->dcb->num_entries && j < db_len; j++){
 
-                if (db.file_blocks[j] != -1)
-                {
+                if (db.file_blocks[j] != -1){
 
                     // ls leggo il primo blocco del file alla posizione corrente
                     DiskDriver_readBlock(d->sfs->disk, first_f_block, db.file_blocks[j]);
 
                     // ls se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
-                    if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
-                    {
+                    if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir){
 
                         found = 1;
-                        break;
                     }
-                    else
-                    {
+
+                    else{
 
                         free(first_f_block);
                         return NULL;
@@ -183,8 +175,8 @@ FileHandle *SimpleFS_openFile(DirectoryHandle *d, const char *filename){
         }
     }
 
-    if (!found)
-    {
+    // ls se il file non è stato trovato, non può essere aperto e restituisco NULL
+    if (!found){
 
         free(first_f_block);
         return NULL;
