@@ -80,11 +80,18 @@ void SimpleFS_format(SimpleFS* fs){
 // un file vuoto consiste solo di un blocco di tipo FirstBlock
 FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 
+    // ls verifico i parametri
+    if (d == NULL || filename == NULL)
+        return NULL;
+
+    // ls alloco il FileHandle da ritornare
+    FileHandle* f_handle = malloc(sizeof(FileHandle));
+
     // ls bisogna prima verificare che NON esista già un file con lo stesso filename nella directory d
     // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
     // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
-    FirstFileBlock first_f_block;
+    FirstFileBlock* first_f_block;
 
     // ls
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
@@ -100,10 +107,10 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         if (d->dcb->file_blocks[j] != -1){
 
             // ls leggo il primo blocco del file alla posizione corrente
-            DiskDriver_readBlock(d->sfs->disk, &first_f_block, d->dcb->file_blocks[j]);
+            DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
 
             // ls se il nome appena letto corrisponde a quello del file che si vuole creare && non è una directory
-            if (strcmp(first_f_block.fcb.name, filename) && first_f_block.fcb.is_dir)
+            if (strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
                 found = 1;
         }
     }
@@ -146,13 +153,36 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     }
 
     // ls se è stato trovato allora non può essere ricreato
-    if(found){
-
-        free(first_f_block);
+    if(found)
         return NULL;
-    }
 
+    // ls cerco un blocco libero
+    int free_idx = DiskDriver_getFreeBlock(d->sfs->disk, d->sfs->disk->header->first_free_block);
+    // se non ci sono blocchi liberi mi fermo e ritorno NULL
+    if(free_idx == -1)
+        return NULL;
     
+    // ls alloco e popolo il primo ed unico blocco del file vuoto da creare
+    first_f_block = malloc(sizeof(FirstFileBlock));
+
+    first_f_block->header.previous_block = -1;
+    first_f_block->header.next_block = -1;
+    first_f_block->header.block_in_disk = free_idx;
+    first_f_block->fcb.directory_block = d->dcb->fcb.block_in_disk;
+    first_f_block->fcb.block_in_disk = free_idx;
+    strcpy(first_f_block->fcb.name, filename);
+    first_f_block->fcb.size_in_blocks = 1;
+
+    // ls alloco e popolo la struttura FileHandle da restituire
+    FileHandle* f_handle = malloc(sizeof(FileHandle));
+
+    f_handle->sfs = d->sfs;
+    f_handle->fcb = NULL; // da implementare
+    f_handle->directory = d->dcb;
+    f_handle->current_block = NULL; // da implementare
+    f_handle->pos_in_file = 0;
+
+    return f_handle;
 }
 
 // legge nell'array di blocchi (preallocato), il nome di tutti i file in una directory
@@ -165,9 +195,6 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
     // ls verifico i parametri
     if (d == NULL || filename == NULL)
         return NULL;
-
-    // ls alloco il FileHandle da ritornare
-    FileHandle* f_handle = malloc(sizeof(FileHandle));
 
     // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
     FirstFileBlock* first_f_block = malloc(sizeof(FirstFileBlock));
@@ -241,7 +268,10 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
         return NULL;
     }
 
-    // ls Aggiorno i dati del FileHandle
+    // ls alloco il FileHandle da ritornare
+    FileHandle* f_handle = malloc(sizeof(FileHandle));
+
+    // ls setto i dati del FileHandle
     f_handle->sfs = d->sfs;
     f_handle->fcb = first_f_block;
     f_handle->directory = d->dcb;
