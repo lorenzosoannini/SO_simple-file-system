@@ -11,6 +11,10 @@
 // restituisce un handle alla directory di primo livello memorizzata nel primo blocco
 DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 
+    // ls controllo corretteza parametri
+    if(fs == NULL || disk == NULL)
+        return NULL;
+
     // ls inizializzo la struttura fs con il disco passato alla funzione
     fs->disk = disk;
 
