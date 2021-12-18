@@ -200,7 +200,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 
     // ls verifico i paramentri
     if(names == NULL || d == NULL)
-        return -1
+        return -1;
 
     // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
@@ -407,6 +407,10 @@ int SimpleFS_seek(FileHandle* f, int pos);
 // 0 in caso di successo, valore negativo in caso di errore
 // fa effetto collaterale sull'handle fornito
 int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
+
+    // ls verifico i paremtri
+    if(d == NULL || !strcmp(dirname, ""))
+        return -1;
 
     // ls se dirname == '..' devo andare alla directory padre
     if(!strcmp("..", dirname)){
