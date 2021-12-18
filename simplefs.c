@@ -92,6 +92,8 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     FileHandle* f_handle = malloc(sizeof(FileHandle));
 
     // ls bisogna prima verificare che NON esista già un file con lo stesso filename nella directory d
+    // non uso la SimpleFS_readDir perchè il codice seguente è più efficiente con il controllo su !found
+
     // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
     // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
@@ -190,7 +192,79 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 }
 
 // legge nell'array di blocchi (preallocato), il nome di tutti i file in una directory
-int SimpleFS_readDir(char** names, DirectoryHandle* d);
+int SimpleFS_readDir(char** names, DirectoryHandle* d){
+
+    // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
+
+    // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
+    FirstFileBlock* first_f_block;
+
+    // ls
+    // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
+    // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
+    int found, i, j = 0;
+
+    // ls #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
+    int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
+
+    // ls inizio con il FirstDirectoryBlock
+    for (i = 0; i < d->dcb->num_entries && j < db_len; i++, j++){
+
+        if (d->dcb->file_blocks[j] != -1){
+
+            // ls leggo il primo blocco del file alla posizione corrente
+            DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
+
+            // ls se non è una directory (aka è un file), ne aggiungo il nome all'array names
+            if (!first_f_block->fcb.is_dir){
+                found++
+                strcpy(names[found], first_f_block->fcb.name)
+            }
+        }
+    }
+
+    // ls calcolo indice di blocco nel disco
+    int block_idx = d->dcb->fcb.block_in_disk;
+
+    DirectoryBlock db;
+
+    // ls proseguo la ricerca nei successivi DirectoryBlock, se esistono
+    if (i < d->dcb->num_entries){
+
+        // ls il nuovo indice di block è il blocco successivo al corrente
+        block_idx = d->dcb->header.next_block;
+
+        // ls #elementi array file_blocks di DirectoryBlock
+        db_len = sizeof(db.file_blocks) / sizeof(int);
+
+        while (i < d->dcb->num_entries){
+
+            DiskDriver_readBlock(d->sfs->disk, &db, block_idx);
+
+            for (j = 0; i < d->dcb->num_entries && j < db_len; j++){
+
+                if (db.file_blocks[j] != -1){
+
+                    // ls leggo il primo blocco del file alla posizione corrente
+                    DiskDriver_readBlock(d->sfs->disk, first_f_block, db.file_blocks[j]);
+
+                    // ls se non è una directory (aka è un file), ne aggiungo il nome all'array names
+                    if (!first_f_block->fcb.is_dir){
+                        found++
+                        strcpy(names[found], first_f_block->fcb.name)
+                    }
+
+                    i++;
+                }
+            }
+
+            block_idx = db.header.next_block;
+        }
+    }
+
+    // restituisco il numero di nomi di file letti nella directory
+    return found;
+}
 
 // ls
 // apre un file nella directory d. Il file dovrebbe esistere
@@ -212,6 +286,8 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
     int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
 
     // ls bisogna verificare che il file esista
+    // ls non uso la SimpleFS_readDir perchè il codice seguente è più efficiente con il controllo su !found
+
     // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
     // ls inizio con il FirstDirectoryBlock
@@ -320,7 +396,7 @@ int SimpleFS_seek(FileHandle* f, int pos);
 
 // cerca una directory in d. Se dirname è uguale a ".." sale di un livello
 // 0 in caso di successo, valore negativo in caso di errore
-// fa effetto collaterale sulla maniglia fornita
+// fa effetto collaterale sull'handle fornito
 int SimpleFS_changeDir(DirectoryHandle* d, char* dirname);
 
 // crea una nuova directory in quella corrente (memorizzata in fs->current_directory_block)
