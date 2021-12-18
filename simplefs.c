@@ -98,7 +98,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
     // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
-    FirstFileBlock* first_f_block = malloc(sizeof(FirstFileBlock));
+    FirstFileBlock first_f_block;
 
     // ls
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
@@ -114,10 +114,10 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         if (d->dcb->file_blocks[j] != -1){
 
             // ls leggo il primo blocco del file alla posizione corrente
-            DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
+            DiskDriver_readBlock(d->sfs->disk, &first_f_block, d->dcb->file_blocks[j]);
 
             // ls se il nome appena letto corrisponde a quello del file che si vuole creare && non è una directory
-            if (!strcmp(first_f_block->fcb.name, filename) && !first_f_block->fcb.is_dir)
+            if (!strcmp(first_f_block.fcb.name, filename) && !first_f_block.fcb.is_dir)
                 found = 1;
         }
     }
@@ -145,10 +145,10 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
                 if (db.file_blocks[j] != -1){
 
                     // ls leggo il primo blocco del file alla posizione corrente
-                    DiskDriver_readBlock(d->sfs->disk, first_f_block, db.file_blocks[j]);
+                    DiskDriver_readBlock(d->sfs->disk, &first_f_block, db.file_blocks[j]);
 
                     // ls se il nome appena letto corrisponde a quello del file che si vuole creare && non è una directory
-                    if (!strcmp(first_f_block->fcb.name, filename) && !first_f_block->fcb.is_dir)
+                    if (!strcmp(first_f_block.fcb.name, filename) && !first_f_block.fcb.is_dir)
                         found = 1;
 
                     i++;
@@ -160,37 +160,98 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     }
 
     // ls se è stato trovato allora non può essere ricreato
-    if(found){
-
-        free(first_f_block);
+    if(found)
         return NULL;
-    }
 
     // ls cerco un blocco libero
     int free_idx = DiskDriver_getFreeBlock(d->sfs->disk, d->sfs->disk->header->first_free_block);
     // se non ci sono blocchi liberi mi fermo e ritorno NULL
-    if(free_idx == -1){
-        
-        free(first_f_block);
+    if(free_idx == -1)
         return NULL;
-    }
     
-    // ls popolo il primo ed unico blocco del file vuoto da creare
-    first_f_block->header.previous_block = -1;
-    first_f_block->header.next_block = -1;
-    first_f_block->header.block_in_disk = free_idx;
-    first_f_block->fcb.directory_block = d->dcb->fcb.block_in_disk;
-    first_f_block->fcb.block_in_disk = free_idx;
-    strcpy(first_f_block->fcb.name, filename);
-    first_f_block->fcb.size_in_blocks = 1;
+    // ls creo e popolo il primo ed unico blocco del file vuoto da creare
+    FirstFileBlock* new_first_f_block = malloc(sizeof(FirstFileBlock));
+
+    new_first_f_block->header.previous_block = -1;
+    new_first_f_block->header.next_block = -1;
+    new_first_f_block->header.block_in_file = 1;
+    new_first_f_block->fcb.directory_block = d->dcb->fcb.block_in_disk;
+    new_first_f_block->fcb.block_in_disk = free_idx;
+    strcpy(new_first_f_block->fcb.name, filename);
+    new_first_f_block->fcb.size_in_bytes = 0;
+    new_first_f_block->fcb.size_in_blocks = 1;
+    new_first_f_block->fcb.is_dir = 0;
+
+    // ls gestisco i blocchi del disco
+
+    // se c'è ancora spazio nel blocco corrente
+    if(j < db_len){
+
+        // ls se la directory padre ha un solo blocco, il FirstDirectoryBlock
+        if(d->dcb->header.next_block == -1)
+            fb->file_blocks[j] = free_idx;
+        // ls se invece ci sono altri DirectoryBlock  
+        else{
+
+            // ls aggiungo il nuovo indice nell'array file_blocks alla posizione j
+            db.file_blocks[j] = free_idx;
+            // ls e scrivo il blocco su disco
+            DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
+            DiskDriver_flush(d->sfs->disk);
+        }
+        
+    }
+    // altrimenti devo creare un nuovo blocco per la directory padre
+    else{
+
+        // ls chiedo al disco un nuovo indice di blocco libero
+        int next_db_idx = DiskDriver_getFreeBlock(d->sfs->disk, d->sfs->disk->header->first_free_block);
+        if(next_db_idx == -1){
+
+            free(new_first_f_block);
+            return NULL;
+        }
+
+        // ls creo e popolo il nuovo blocco
+        DirectoryBlock new_db;
+
+        new_db.header.previous_block = block_idx;
+        new_db.header.next_block = -1;
+        new_db.header.block_in_file = i;
+        new_db.file_blocks[0] = free_idx;
+        // ls scrivo il nuovo blocco su disco
+        DiskDriver_writeBlock(d->sfs->disk, &new_db, next_db_idx);
+        DiskDriver_flush(d->sfs->disk);
+
+        // ls se la directory padre aveva un solo blocco
+        if(d->dcb->header.next_block == -1)
+            fb->header.next_block = next_db_idx;
+
+        else{
+
+            db.header.next_block = next_db_idx;
+            DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
+            DiskDriver_flush(d->sfs->disk);
+        }
+
+        // ls aggiorno il FileControlBlock della directory
+        d->dcb->fcb.size_in_bytes += sizeof(DirectoryBlock);
+        d->dcb->fcb.size_in_blocks += 1;
+    }
+
+    // ls scrivo su disco il nuovo blocco della directory appena creata
+    DiskDriver_writeBlock(d->sfs->disk, new_first_f_block, free_idx);
+    d->dcb->num_entries++;
+    DiskDriver_writeBlock(d->sfs->disk, fb, fb->fcb.block_in_disk);
+    DiskDriver_flush(d->sfs->disk);
 
     // ls alloco e popolo la struttura FileHandle da restituire
     FileHandle* f_handle = malloc(sizeof(FileHandle));
 
     f_handle->sfs = d->sfs;
-    f_handle->fcb = NULL; // da implementare
+    f_handle->fcb = new_first_f_block;
     f_handle->directory = d->dcb;
-    f_handle->current_block = NULL; // da implementare
+    f_handle->current_block = (BlockHeader*)new_first_f_block;
     f_handle->pos_in_file = 0;
 
     return f_handle;
@@ -529,7 +590,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
         return -1;
 
     // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
-    FirstFileBlock* first_f_block = malloc(sizeof(FirstFileBlock));
+    FirstFileBlock first_f_block;
 
     // ls
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
@@ -550,10 +611,10 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
         if (d->dcb->file_blocks[j] != -1){
 
             // ls leggo il primo blocco del file alla posizione corrente
-            DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
+            DiskDriver_readBlock(d->sfs->disk, &first_f_block, d->dcb->file_blocks[j]);
 
             // ls se il nome appena letto corrisponde a quello della directory che si vuole creare && è una directory
-            if (!strcmp(first_f_block->fcb.name, dirname) && first_f_block->fcb.is_dir)
+            if (!strcmp(first_f_block.fcb.name, dirname) && first_f_block.fcb.is_dir)
                 found = 1;
         }
     }
@@ -581,10 +642,10 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
                 if (db.file_blocks[j] != -1){
 
                     // ls leggo il primo blocco del file alla posizione corrente
-                    DiskDriver_readBlock(d->sfs->disk, first_f_block, db.file_blocks[j]);
+                    DiskDriver_readBlock(d->sfs->disk, &first_f_block, db.file_blocks[j]);
 
                     // ls se il nome appena letto corrisponde a quello della directory che si vuole creare && è una directory
-                    if (!strcmp(first_f_block->fcb.name, dirname) && first_f_block->fcb.is_dir)
+                    if (!strcmp(first_f_block.fcb.name, dirname) && first_f_block.fcb.is_dir)
                         found = 1;
 
                     i++;
@@ -596,11 +657,8 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
     }
 
     // ls se è stata trovata una directory con il nome dirname, errore
-    if (found){
-
-        free(first_f_block);
+    if (found)
         return -1;
-    }
 
     // fai cose
 }
