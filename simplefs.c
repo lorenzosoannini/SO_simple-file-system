@@ -198,6 +198,10 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 // legge nell'array di blocchi (preallocato), il nome di tutti i file in una directory
 int SimpleFS_readDir(char** names, DirectoryHandle* d){
 
+    // ls verifico i paramentri
+    if(names == NULL || d == NULL)
+        return -1
+
     // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
     // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
