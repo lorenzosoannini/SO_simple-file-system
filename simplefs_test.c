@@ -1,11 +1,13 @@
-#include "bitmap.c" 
-#include "disk_driver.c"
+#include "bitmap.h" 
+#include "disk_driver.h"
+#include "simplefs.h"
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h> 
 #include <fcntl.h> 
 #include <unistd.h>
 #include <stdlib.h>
+#include <assert.h>
 
 int choose;
 int i;
@@ -260,7 +262,29 @@ int main(int agc, char** argv) {
 	printf("██████╔╝██║██║░╚═╝░██║██║░░░░░███████╗███████╗██║░░░░░██████╔╝\n");
 	printf("╚═════╝░╚═╝╚═╝░░░░░╚═╝╚═╝░░░░░╚══════╝╚══════╝╚═╝░░░░░╚═════╝░\n");
 	printf("Hai scelto di testare il SimpleFS\n");
-		
+
+	// ls	
+	printf("\n--- Creo e inizializzo un nuovo disco\n");
+		//inizializzo il DiskDriver e la bitmap
+		DiskDriver disk;
+		DiskDriver_init(&disk, "file_test/testosterone.txt", 50); 
+	printf("    Inizializzazione Disk Driver Riuscita\n");
+		BitMap bitmap;
+		bitmap.num_bits = disk.header->bitmap_entries * 8;
+		bitmap.entries = disk.bitmap_data;
+	
+	 	//setto tutti 0 nella bitmap
+		for(i = 0; i < bitmap.num_bits; i++)
+		BitMap_set(&bitmap, i, 0);
+				
+	printf("    Creazione Bitmap e Azzeramento riuscito\n");
+
+	printf("--- Formatto e inizializzo il filesystem\n");
+	printf("--- Test SimpleFS_init()\n");
+		SimpleFS fs;
+		DirectoryHandle* d = SimpleFS_init(&fs, &disk);
+		assert(d == NULL);
+	printf("    TEST PASSED\n");
 
   }
 }
