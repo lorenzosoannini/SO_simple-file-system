@@ -394,10 +394,116 @@ int SimpleFS_read(FileHandle* f, void* data, int size);
 // -1 in caso di errore (file troppo corto)
 int SimpleFS_seek(FileHandle* f, int pos);
 
+// ls
 // cerca una directory in d. Se dirname è uguale a ".." sale di un livello
 // 0 in caso di successo, valore negativo in caso di errore
 // fa effetto collaterale sull'handle fornito
-int SimpleFS_changeDir(DirectoryHandle* d, char* dirname);
+int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
+
+    // ls se dirname == '..' devo andare alla directory padre
+    if(!strcmp("..", dirname)){
+
+        // ls qui salvo le informazioni della directory padre della directory '..' (per popolare l'handle di '..')
+        FirstDirectoryBlock* parent_of_parent = malloc(sizeof(FirstDirectoryBlock));
+        // ls leggo il FirstDirectoryBlock del padre di '..'
+        DiskDriver_readBlock(d->sfs->disk, parent_of_parent, d->directory->fcb.directory_block);
+
+        //ls varibile di appoggio per la successiva free del vecchio puntatore
+        FirstDirectoryBlock* tmp = d->dcb;
+
+        //ls popolo l'handle di '..'
+        d->dcb = d->directory; // ls l'handle d punta ora come primo blocco della directory corrente alla directory '..'
+        d->directory = parent_of_parent; // ls l'handle d punta ora come primo blocco della directory padre al padre di '..'
+        
+        free(tmp);
+        return 0;
+    }
+
+    // ls bisogna cercare all'interno della directory corrente la directory dirname
+
+    // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
+    FirstFileBlock* first_f_block = malloc(sizeof(FirstFileBlock));
+
+    // ls
+    // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
+    // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
+    int found, i, j = 0;
+
+    // ls #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
+    int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
+
+    // ls bisogna verificare che la directory esista
+    // ls non uso la SimpleFS_readDir perchè il codice seguente è più efficiente con il controllo su !found
+
+    // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
+
+    // ls inizio con il FirstDirectoryBlock
+    for (i = 0; i < d->dcb->num_entries && j < db_len && !found; i++, j++){
+
+        if (d->dcb->file_blocks[j] != -1){
+
+            // ls leggo il primo blocco del file alla posizione corrente
+            DiskDriver_readBlock(d->sfs->disk, first_f_block, d->dcb->file_blocks[j]);
+
+            // ls se il nome appena letto corrisponde a quello del file che si vuole aprire && è una directory
+            if (!strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
+                found = 1;
+        }
+    }
+
+    // ls calcolo indice di blocco nel disco
+    int block_idx = d->dcb->fcb.block_in_disk;
+
+    DirectoryBlock db;
+
+    // ls se non è stato ancora trovato proseguo la ricerca nei successivi DirectoryBlock
+    if (!found && i < d->dcb->num_entries){
+
+        // ls il nuovo indice di blocck è il blocco successivo al corrente
+        block_idx = d->dcb->header.next_block;
+
+        // ls #elementi array file_blocks di DirectoryBlock
+        db_len = sizeof(db.file_blocks) / sizeof(int);
+
+        while (i < d->dcb->num_entries && !found){
+
+            DiskDriver_readBlock(d->sfs->disk, &db, block_idx);
+
+            for (j = 0; i < d->dcb->num_entries && j < db_len; j++){
+
+                if (db.file_blocks[j] != -1){
+
+                    // ls leggo il primo blocco del file alla posizione corrente
+                    DiskDriver_readBlock(d->sfs->disk, first_f_block, db.file_blocks[j]);
+
+                    // ls se il nome appena letto corrisponde a quello del file che si vuole aprire && è una directory
+                    if (!strcmp(first_f_block->fcb.name, filename) && first_f_block->fcb.is_dir)
+                        found = 1;
+
+                    i++;
+                }
+            }
+
+            block_idx = db.header.next_block;
+        }
+    }
+
+    // ls se la directory non è stata trovata, errore
+    if (!found){
+
+        free(first_f_block);
+        return -1;
+    }
+
+    // ls se è stata trovata la directory dirname, faccio side-effect sull'handle
+    d->directory = d->dcb;
+    d->dcb = first_f_block;
+    d->current_block = &(first_f_block->header);
+    d->pos_in_dir = 0;
+    d->pos_in_block = first_f_block->fcb.block_in_disk;
+    
+    return 0;
+}
 
 // crea una nuova directory in quella corrente (memorizzata in fs->current_directory_block)
 // 0 in caso di successo
