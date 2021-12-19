@@ -283,7 +283,7 @@ int main(int agc, char** argv) {
 	printf("--- Test SimpleFS_init()\n");
 		SimpleFS fs;
 		DirectoryHandle* d = SimpleFS_init(&fs, &disk);
-		assert(d == NULL);
+		assert(d != NULL);
 	printf("    TEST PASSED\n");
 
   }

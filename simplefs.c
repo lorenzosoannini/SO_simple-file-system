@@ -12,8 +12,10 @@
 DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 
     // ls controllo corretteza parametri
-    if(fs == NULL || disk == NULL)
+    if(fs == NULL || disk == NULL){
+        fprintf(stderr, "Error in SimpleFS_init: invalid parameters\n");
         return NULL;
+    }
 
     // ls inizializzo la struttura fs con il disco passato alla funzione
     fs->disk = disk;
@@ -47,15 +49,17 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 void SimpleFS_format(SimpleFS* fs){
 
     // ls se il filesystem passato è invalido non faccio nulla
-    if (fs == NULL)
+    if (fs == NULL){
+        fprintf(stderr, "Error in SimpleFS_format: invalid parameter\n");
         return;
+    }
 
     // ls creo un file name per il disk
     char disk_filename[255];
     sprintf(disk_filename, "disk/%ld.txt", time(NULL));
 
     // ls inizializzo il DiskDriver per il disco corrente
-    DiskDriver_init(fs->disk, disk_filename, fs->disk->header->num_blocks);
+    //DiskDriver_init(fs->disk, disk_filename, fs->disk->header->num_blocks);
 
     // ls creo il primo blocco della top level directory "/"
     FirstDirectoryBlock root;
@@ -89,8 +93,10 @@ void SimpleFS_format(SimpleFS* fs){
 FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 
     // ls verifico i parametri
-    if (d == NULL || filename == NULL)
+    if (d == NULL || filename == NULL){
+        fprintf(stderr, "Error in SimpleFS_createFile: invalid parameters\n");
         return NULL;
+    }
 
     // ls bisogna prima verificare che NON esista già un file con lo stesso filename nella directory d
     // non uso la SimpleFS_readDir perchè il codice seguente è più efficiente con il controllo su !found
@@ -160,14 +166,18 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     }
 
     // ls se è stato trovato allora non può essere ricreato
-    if(found)
+    if(found){
+        fprintf(stderr, "Error in SimpleFS_createFile: a file with filename '%s' already exists\n", filename);
         return NULL;
+    }
 
     // ls cerco un blocco libero
     int free_idx = DiskDriver_getFreeBlock(d->sfs->disk, d->sfs->disk->header->first_free_block);
     // se non ci sono blocchi liberi mi fermo e ritorno NULL
-    if(free_idx == -1)
+    if(free_idx == -1){
+        fprintf(stderr, "Error in SimpleFS_createFile: Error in DiskDriver_getFreeBlock: cannot get a new free block from disk\n");
         return NULL;
+    }
     
     // ls creo e popolo il primo ed unico blocco del file vuoto da creare
     FirstFileBlock* new_first_f_block = malloc(sizeof(FirstFileBlock));
@@ -207,7 +217,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         // ls chiedo al disco un nuovo indice di blocco libero
         int next_db_idx = DiskDriver_getFreeBlock(d->sfs->disk, d->sfs->disk->header->first_free_block);
         if(next_db_idx == -1){
-
+            fprintf(stderr, "Error in SimpleFS_createFile: Error in DiskDriver_getFreeBlock: cannot get a new free block from disk\n");
             free(new_first_f_block);
             return NULL;
         }
@@ -261,8 +271,10 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 int SimpleFS_readDir(char** names, DirectoryHandle* d){
 
     // ls verifico i paramentri
-    if(names == NULL || d == NULL)
+    if(names == NULL || d == NULL){
+        fprintf(stderr, "Error in SimpleFS_readDir: invalid parameters\n");
         return -1;
+    }
 
     // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
@@ -341,8 +353,10 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 
     // ls verifico i parametri
-    if (d == NULL || filename == NULL)
+    if (d == NULL || filename == NULL){
+        fprintf(stderr, "Error in SimpleFS_openFile: invalid parameters\n");
         return NULL;
+    }
 
     // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
     FirstFileBlock* first_f_block = malloc(sizeof(FirstFileBlock));
@@ -413,7 +427,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 
     // ls se il file non è stato trovato, non può essere aperto e restituisco NULL
     if (!found){
-
+        fprintf(stderr, "Error in SimpleFS_openFile: cannot find a file called '%s'\n", filename);
         free(first_f_block);
         return NULL;
     }
@@ -437,8 +451,10 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 int SimpleFS_close(FileHandle* f){
 
     // ls nulla da fare
-    if (f == NULL)
+    if (f == NULL){
+        fprintf(stderr, "Error in SimpleFS_close: invalid parameter\n");
         return -1;
+    }
 
     // ls check per non far fallire la seguente free(f->fcb)
     if (&(f->fcb->header) != f->current_block)
@@ -471,8 +487,10 @@ int SimpleFS_seek(FileHandle* f, int pos);
 int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 
     // ls verifico i paremtri
-    if(d == NULL || !strcmp(dirname, ""))
+    if(d == NULL || !strcmp(dirname, "")){
+        fprintf(stderr, "Error in SimpleFS_changeFile: invalid parameters\n");
         return -1;
+    }
 
     // ls se dirname == '..' devo andare alla directory padre
     if(!strcmp("..", dirname)){
@@ -564,7 +582,7 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 
     // ls se la directory non è stata trovata, errore
     if (!found){
-
+        fprintf(stderr, "Error in SimpleFS_changeDir: cannot find a directory called '%s'\n", dirname);
         free(first_d_block);
         return -1;
     }
@@ -586,8 +604,10 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 
     // ls verifico i parametri
-    if(d == NULL || !strcmp(dirname, ""))
+    if(d == NULL || !strcmp(dirname, "")){
+        fprintf(stderr, "Error in SimpleFS_mkDir: invalid parameters\n");
         return -1;
+    }
 
     // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
     FirstFileBlock first_f_block;
@@ -657,8 +677,10 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
     }
 
     // ls se è stata trovata una directory con il nome dirname, errore
-    if (found)
+    if (found){
+        fprintf(stderr, "Error in SimpleFS_mkDir: a directory called '%s' already exists\n");
         return -1;
+    }
 
     // fai cose
 }

@@ -16,12 +16,12 @@ HEADERS=bitmap.h\
 .phony: clean all
 
 
+simplefs_test: simplefs_test.c $(OBJS) 
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
 all:	$(BINS) 
 
 objs: $(OBJS)
-
-so_game: simplefs_test.c $(OBJS) 
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 clean:
 	rm -rf *.o *~  $(BINS)
