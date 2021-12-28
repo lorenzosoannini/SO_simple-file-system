@@ -284,13 +284,13 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
     // ls
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
     // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
-    int found, i, j = 0;
+    int i, j = 0;
 
     // ls #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
     int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
 
     // ls inizio con il FirstDirectoryBlock
-    for (i = 0; i < d->dcb->num_entries && j < db_len; i++, j++){
+    for (i = 0; i < d->dcb->num_entries && j < db_len; j++){
 
         if (d->dcb->file_blocks[j] != -1){
 
@@ -299,9 +299,16 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 
             // ls se non è una directory (aka è un file), ne aggiungo il nome all'array names
             if (!first_f_block.fcb.is_dir){
-                found++;
-                strcpy(names[found], first_f_block.fcb.name);
+
+                strcpy(names[i], first_f_block.fcb.name);
             }
+            // ls se è una directory aggiungo "(d)" al nome
+            else{
+
+                strcpy(names[i], strcat(first_f_block.fcb.name, " (d)"));
+            }
+
+            i++;
         }
     }
 
@@ -332,8 +339,12 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 
                     // ls se non è una directory (aka è un file), ne aggiungo il nome all'array names
                     if (!first_f_block.fcb.is_dir){
-                        found++;
-                        strcpy(names[found], first_f_block.fcb.name);
+                    
+                        strcpy(names[i], first_f_block.fcb.name);
+                    }
+                    else{
+
+                        strcpy(names[i], strcat(first_f_block.fcb.name, " (d)"));
                     }
 
                     i++;
@@ -345,7 +356,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
     }
 
     // restituisco il numero di nomi di file letti nella directory
-    return found;
+    return i;
 }
 
 // ls
@@ -678,7 +689,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 
     // ls se è stata trovata una directory con il nome dirname, errore
     if (found){
-        fprintf(stderr, "Error in SimpleFS_mkDir: a directory called '%s' already exists\n");
+        fprintf(stderr, "Error in SimpleFS_mkDir: a directory called '%s' already exists\n", dirname);
         return -1;
     }
 

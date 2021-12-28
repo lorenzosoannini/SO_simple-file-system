@@ -279,11 +279,24 @@ int main(int agc, char** argv) {
 				
 	printf("    Creazione Bitmap e Azzeramento riuscito\n");
 
-	printf("--- Formatto e inizializzo il filesystem\n");
+	printf("    Formatto e inizializzo il filesystem\n");
 	printf("--- Test SimpleFS_init()\n");
 		SimpleFS fs;
 		DirectoryHandle* d = SimpleFS_init(&fs, &disk);
 		assert(d != NULL);
+	printf("    TEST PASSED\n");
+
+	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
+	printf("--- Test SimpleFS_readDir\n");
+		char names[128][128];
+		ret = SimpleFS_readDir((char**)names, d);
+		assert(ret >= 0);
+		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
+		
+		printf("\n");
+		for(i=0; i < ret; i++){
+			printf("     \t%s\n", names[i]);
+		}
 	printf("    TEST PASSED\n");
 
   }
