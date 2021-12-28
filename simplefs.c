@@ -109,13 +109,13 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     // ls
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
     // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
-    int found, i, j = 0;
+    int found = 0, i, j = 0;
 
     // ls #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
     int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
 
     // ls inizio con il FirstDirectoryBlock
-    for (i = 0; i < d->dcb->num_entries && j < db_len && !found; i++, j++){
+    for (i = 0; i < d->dcb->num_entries && j < db_len && !found; j++){
 
         if (d->dcb->file_blocks[j] != -1){
 
@@ -125,6 +125,8 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
             // ls se il nome appena letto corrisponde a quello del file che si vuole creare && non è una directory
             if (!strcmp(first_f_block.fcb.name, filename) && !first_f_block.fcb.is_dir)
                 found = 1;
+
+            i++;
         }
     }
 
@@ -300,12 +302,12 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
             // ls se non è una directory (aka è un file), ne aggiungo il nome all'array names
             if (!first_f_block.fcb.is_dir){
 
-                strcpy(names[i], first_f_block.fcb.name);
+                names[i] = strdup(first_f_block.fcb.name);
             }
             // ls se è una directory aggiungo "(d)" al nome
             else{
 
-                strcpy(names[i], strcat(first_f_block.fcb.name, " (d)"));
+                names[i] = strdup(strcat(first_f_block.fcb.name, " (d)"));
             }
 
             i++;
@@ -340,11 +342,11 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
                     // ls se non è una directory (aka è un file), ne aggiungo il nome all'array names
                     if (!first_f_block.fcb.is_dir){
                     
-                        strcpy(names[i], first_f_block.fcb.name);
+                        names[i] = strdup(first_f_block.fcb.name);
                     }
                     else{
 
-                        strcpy(names[i], strcat(first_f_block.fcb.name, " (d)"));
+                        names[i] = strdup(strcat(first_f_block.fcb.name, " (d)"));
                     }
 
                     i++;
@@ -375,7 +377,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
     // ls
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
     // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
-    int found, i, j = 0;
+    int found = 0, i, j = 0;
 
     // ls #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
     int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
@@ -386,7 +388,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
     // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
 
     // ls inizio con il FirstDirectoryBlock
-    for (i = 0; i < d->dcb->num_entries && j < db_len && !found; i++, j++){
+    for (i = 0; i < d->dcb->num_entries && j < db_len && !found; j++){
 
         if (d->dcb->file_blocks[j] != -1){
 
@@ -396,6 +398,8 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
             // ls se il nome appena letto corrisponde a quello del file che si vuole aprire && non è una directory
             if (!strcmp(first_f_block->fcb.name, filename) && !first_f_block->fcb.is_dir)
                 found = 1;
+
+            i++;
         }
     }
 

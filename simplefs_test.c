@@ -278,6 +278,7 @@ int main(int agc, char** argv) {
 		BitMap_set(&bitmap, i, 0);
 				
 	printf("    Creazione Bitmap e Azzeramento riuscito\n");
+	printf("\n");
 
 	printf("    Formatto e inizializzo il filesystem\n");
 	printf("--- Test SimpleFS_init()\n");
@@ -285,19 +286,64 @@ int main(int agc, char** argv) {
 		DirectoryHandle* d = SimpleFS_init(&fs, &disk);
 		assert(d != NULL);
 	printf("    TEST PASSED\n");
+	printf("\n");
 
 	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
-	printf("--- Test SimpleFS_readDir\n");
-		char names[128][128];
+	printf("    Chiamata prima della SimpleFS_createFile (mi aspetto 0 file nella cartella)\n");
+	printf("--- Test SimpleFS_readDir()\n");
+		char* names[50];
+		for(i = 0; i < sizeof(names)/sizeof(char*); i++){
+			names[i] = malloc(128*sizeof(char));
+		}
+
 		ret = SimpleFS_readDir((char**)names, d);
 		assert(ret >= 0);
 		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
 		
 		printf("\n");
-		for(i=0; i < ret; i++){
+		for(i = 0; i < ret; i++){
 			printf("     \t%s\n", names[i]);
 		}
 	printf("    TEST PASSED\n");
+	printf("\n");
+
+	printf("    Creo un nuovo file chiamato 'file1'\n");
+	printf("--- Test SimpleFS_createFile()\n");
+		FileHandle* f1 = SimpleFS_createFile(d, "file1");
+		assert(f1 != NULL);
+	printf("    TEST PASSED\n");
+	printf("\n");
+
+	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
+	printf("    Chiamata dopo la SimpleFS_createFile (mi aspetto 1 file nella cartella)\n");
+	printf("--- Test SimpleFS_readDir()\n");
+		ret = SimpleFS_readDir(names, d);
+		assert(ret >= 0);
+		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
+		for(i = 0; i < ret; i++){
+			printf("     \t%s\n", names[i]);
+		}
+	printf("    TEST PASSED\n");
+	printf("\n");
+
+	printf("    Creo un nuovo file chiamato 'file2'\n");
+	printf("--- Test SimpleFS_createFile()\n");
+		FileHandle* f2 = SimpleFS_createFile(d, "file2");
+		assert(f2 != NULL);
+	printf("    TEST PASSED\n");
+	printf("\n");
+
+	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
+	printf("    Chiamata dopo la SimpleFS_createFile (mi aspetto 2 file nella cartella)\n");
+	printf("--- Test SimpleFS_readDir()\n");
+		ret = SimpleFS_readDir((char**)names, d);
+		assert(ret >= 0);
+		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
+		for(i = 0; i < ret; i++){
+			printf("     \t%s\n", names[i]);
+		}
+	printf("    TEST PASSED\n");
+	printf("\n");
 
   }
 }
