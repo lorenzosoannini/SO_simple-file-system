@@ -186,7 +186,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 
     new_first_f_block->header.previous_block = -1;
     new_first_f_block->header.next_block = -1;
-    new_first_f_block->header.block_in_file = 1;
+    new_first_f_block->header.block_in_file = free_idx;
     new_first_f_block->fcb.directory_block = d->dcb->fcb.block_in_disk;
     new_first_f_block->fcb.block_in_disk = free_idx;
     strcpy(new_first_f_block->fcb.name, filename);
@@ -230,6 +230,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         new_db.header.previous_block = block_idx;
         new_db.header.next_block = -1;
         new_db.header.block_in_file = i;
+        memset(new_db.file_blocks, 0, sizeof(new_db.file_blocks));
         new_db.file_blocks[0] = free_idx;
         // ls scrivo il nuovo blocco su disco
         DiskDriver_writeBlock(d->sfs->disk, &new_db, next_db_idx);
@@ -630,7 +631,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
     // ls
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
     // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
-    int found, i, j = 0;
+    int found = 0, i, j = 0;
 
     // ls #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
     int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
@@ -697,7 +698,92 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
         return -1;
     }
 
-    // fai cose
+    // ls chiedo al DiskDriver un nuovo blocco libero per la directory
+    int free_idx = DiskDriver_getFreeBlock(d->sfs->disk, d->sfs->disk->header->first_free_block);
+    if(free_idx == -1){
+        fprintf(stderr, "Error in SimpleFS_mkDir: Error in DiskDriver_getFreeBlock: cannot get a new free block from disk\n");
+        return -1;
+    }
+
+    // ls creo un nuovo FirstDirecotryBlock e lo popolo
+    FirstDirectoryBlock new_f_dir;
+
+    new_f_dir.header.previous_block = -1;
+    new_f_dir.header.next_block = -1;
+    new_f_dir.header.block_in_file = free_idx;
+    new_f_dir.fcb.directory_block = d->dcb->fcb.block_in_disk;
+    new_f_dir.fcb.block_in_disk = free_idx;
+    strcpy(new_f_dir.fcb.name, dirname);
+    new_f_dir.fcb.size_in_bytes = 0;
+    new_f_dir.fcb.size_in_blocks = 1;
+    new_f_dir.fcb.is_dir = 1;
+    new_f_dir.num_entries = 0;
+    memset(new_f_dir.file_blocks, 0, sizeof(new_f_dir.file_blocks));
+
+    // ls gestisco i blocchi del disco
+
+    // se c'è ancora spazio nel blocco corrente
+    if(j < db_len){
+
+        // ls se la directory padre ha un solo blocco, il FirstDirectoryBlock
+        if(d->dcb->header.next_block == -1)
+            d->dcb->file_blocks[j] = free_idx;
+        // ls se invece ci sono altri DirectoryBlock  
+        else{
+
+            // ls aggiungo il nuovo indice nell'array file_blocks alla posizione j
+            db.file_blocks[j] = free_idx;
+            // ls e scrivo il blocco su disco
+            DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
+            DiskDriver_flush(d->sfs->disk);
+        }
+        
+    }
+    // altrimenti devo creare un nuovo blocco per la directory padre
+    else{
+
+        // ls chiedo al disco un nuovo indice di blocco libero
+        int next_db_idx = DiskDriver_getFreeBlock(d->sfs->disk, d->sfs->disk->header->first_free_block);
+        if(next_db_idx == -1){
+            fprintf(stderr, "Error in SimpleFS_mkDir: Error in DiskDriver_getFreeBlock: cannot get a new free block from disk\n");
+            return -1;
+        }
+
+        // ls creo e popolo il nuovo blocco
+        DirectoryBlock new_db;
+
+        new_db.header.previous_block = block_idx;
+        new_db.header.next_block = -1;
+        new_db.header.block_in_file = i;
+        memset(new_db.file_blocks, 0, sizeof(new_db.file_blocks));
+        new_db.file_blocks[0] = free_idx;
+        // ls scrivo il nuovo blocco su disco
+        DiskDriver_writeBlock(d->sfs->disk, &new_db, next_db_idx);
+        DiskDriver_flush(d->sfs->disk);
+
+        // ls se la directory padre aveva un solo blocco
+        if(d->dcb->header.next_block == -1)
+            d->dcb->header.next_block = next_db_idx;
+
+        else{
+
+            db.header.next_block = next_db_idx;
+            DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
+            DiskDriver_flush(d->sfs->disk);
+        }
+
+        // ls aggiorno il FileControlBlock della directory
+        d->dcb->fcb.size_in_bytes += sizeof(DirectoryBlock);
+        d->dcb->fcb.size_in_blocks += 1;
+    }
+
+    // ls scrivo su disco il nuovo blocco della directory appena creata
+    DiskDriver_writeBlock(d->sfs->disk, &new_f_dir, free_idx);
+    d->dcb->num_entries++;
+    DiskDriver_writeBlock(d->sfs->disk, d->dcb, d->dcb->fcb.block_in_disk);
+    DiskDriver_flush(d->sfs->disk);
+
+    return 0;
 }
 
 // rimuove il file nella directory corrente
