@@ -728,17 +728,6 @@ int main(int agc, char** argv) {
 	getchar();
 	printf("\n");
 
-	printf("    Apro il file 'file1' nella directory corrente\n");
-	printf("--- Test SimpleFS_openFile()\n");
-		FileHandle* file1 = SimpleFS_openFile(d, "file1");
-		printf("    Ho aperto il file '%s' nella directory '%s'\n", file1->fcb->fcb.name, d->dcb->fcb.name);
-		assert(!strcmp(file1->fcb->fcb.name, f1->fcb->fcb.name));
-		printf("    TEST PASSED\n");
-	printf("\n");
-	printf("Premi ENTER per continuare\n");  
-	getchar();
-	printf("\n");
-
 	printf("    Rimuovo il file 'file2' nella directory corrente\n");
 	printf("--- Test SimpleFS_remove()\n");
 		ret = SimpleFS_remove(d, "file2");
@@ -759,6 +748,42 @@ int main(int agc, char** argv) {
 			printf("     \t%s\n", names[i]);
 		}
 	printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Provo a rimuovere il file 'file4' che NON esiste nella directory corrente\n");
+	printf("--- Test SimpleFS_remove()\n");
+		ret = SimpleFS_remove(d, "file4");
+		assert(ret < 0);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
+	printf("    Mi aspetto 1 file e 2 cartelle nella directory\n");
+	printf("--- Test SimpleFS_readDir()\n");
+		ret = SimpleFS_readDir((char**)names, d);
+		assert(ret >= 0);
+		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
+		for(i = 0; i < ret; i++){
+			printf("     \t%s\n", names[i]);
+		}
+	printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Apro il file 'file1' nella directory corrente\n");
+	printf("--- Test SimpleFS_openFile()\n");
+		FileHandle* file1 = SimpleFS_openFile(d, "file1");
+		printf("    Ho aperto il file '%s' nella directory '%s'\n", file1->fcb->fcb.name, d->dcb->fcb.name);
+		assert(!strcmp(file1->fcb->fcb.name, f1->fcb->fcb.name));
+		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  
 	getchar();
