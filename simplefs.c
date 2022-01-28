@@ -919,8 +919,10 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
             DiskDriver_readBlock(d->sfs->disk, &first_f_block, d->dcb->file_blocks[j]);
 
             // ls se il nome appena letto corrisponde a quello del file o directory che si vuole rimuovere
-            if (!strcmp(first_f_block.fcb.name, filename))
+            if (!strcmp(first_f_block.fcb.name, filename)){
                 found = 1;
+                d->dcb->file_blocks[j] = -1;
+            }
 
             i++;
         }
@@ -952,8 +954,10 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
                     DiskDriver_readBlock(d->sfs->disk, &first_f_block, db.file_blocks[j]);
 
                     // ls se il nome appena letto corrisponde a quello del file o directory che si vuole rimuovere
-                    if (!strcmp(first_f_block.fcb.name, filename))
+                    if (!strcmp(first_f_block.fcb.name, filename)){
                         found = 1;
+                        db.file_blocks[j] = -1;
+                    }
 
                     i++;
                 }
@@ -969,7 +973,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
         return -1;
     }
 
-    //DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
+    DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
 
     d->dcb->num_entries--;
     DiskDriver_writeBlock(d->sfs->disk, d->dcb, d->dcb->header.block_in_file);
