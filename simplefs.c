@@ -270,6 +270,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     return f_handle;
 }
 
+// ls
 // legge nell'array di blocchi (preallocato), il nome di tutti i file in una directory
 int SimpleFS_readDir(char** names, DirectoryHandle* d){
 
@@ -786,7 +787,195 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
     return 0;
 }
 
+// ls funzione per la rimozione di tutti i blocchi di un file
+void remove_file(FileBlock* readed_block, DiskDriver* disk){
+
+    if (readed_block->header.next_block == -1)
+        DiskDriver_freeBlock(disk, readed_block->header.block_in_file);
+
+    else{
+        FileBlock* tmp = (FileBlock*) malloc (sizeof(FileBlock));
+        DiskDriver_readBlock(disk, tmp, readed_block->header.next_block);
+        remove_file(tmp, disk);
+        free(tmp);
+        DiskDriver_freeBlock(disk, readed_block->header.block_in_file);
+    }
+}
+
+// ls funzione per la rimozione di tutti i blocchi di una directory
+void remove_directory(FirstDirectoryBlock* readed_block, DiskDriver* disk){
+
+    FirstFileBlock first_f_block;
+
+    int i, j = 0;
+
+    int db_len = sizeof(readed_block->file_blocks) / sizeof(int);
+
+    for (i = 0; i < readed_block->num_entries && j < db_len; j++){
+
+        if (readed_block->file_blocks[j] != -1){
+
+            DiskDriver_readBlock(disk, &first_f_block, readed_block->file_blocks[j]);
+
+            remove_blocks(&first_f_block, disk);
+
+            i++;
+        }
+    }
+
+    int block_idx = readed_block->fcb.block_in_disk;
+
+    DirectoryBlock db;
+
+    if (i < readed_block->num_entries){
+
+        block_idx = readed_block->header.next_block;
+
+        db_len = sizeof(db.file_blocks) / sizeof(int);
+
+        while (i < readed_block->num_entries){
+
+            DiskDriver_readBlock(disk, &db, block_idx);
+
+            for (j = 0; i < readed_block->num_entries && j < db_len; j++){
+
+                if (db.file_blocks[j] != -1){
+
+                    DiskDriver_readBlock(disk, &first_f_block, db.file_blocks[j]);
+
+                    remove_blocks(&first_f_block, disk);
+
+                    i++;
+                }
+            }
+
+            block_idx = db.header.next_block;
+        }
+    }
+
+    remove_directory_blocks((DirectoryBlock* )readed_block, disk);
+
+}
+
+// ls funzione d'appoggio per la ricorsione
+void remove_directory_blocks (DirectoryBlock* db, DiskDriver* disk){
+
+    if (db->header.next_block == -1)
+        DiskDriver_freeBlock(disk, db->header.block_in_file);
+
+    else{
+        DirectoryBlock tmp;
+        DiskDriver_readBlock(disk, &tmp, db->header.next_block);
+        remove_directory_blocks(&tmp, disk);
+        
+        DiskDriver_freeBlock(disk, db->header.block_in_file);
+    }
+}
+
+// ls funzione d'appoggio per la rimozione ricorsiva 
+void remove_blocks(FirstFileBlock* readed_block, DiskDriver* disk){
+
+    if (readed_block->fcb.is_dir)
+        remove_directory((FirstDirectoryBlock*) readed_block, disk);
+    
+    else
+        remove_file((FileBlock*) readed_block, disk);
+}
+
+// ls
 // rimuove il file nella directory corrente
 // restituisce -1 in caso di errore 0 in caso di successo
 // se una directory, rimuove ricorsivamente tutti i file contenuti
-int SimpleFS_remove(SimpleFS* fs, char* filename);
+int SimpleFS_remove(DirectoryHandle* d, char* filename){
+
+    // ls verifico i parametri
+    if (d == NULL || filename == NULL){
+        fprintf(stderr, "Error in SimpleFS_remove: invalid parameters\n");
+        return -1;
+    }
+
+    // ls qui andrò a salvare le informazioni del primo blocco di ogni file scandito dal ciclo for
+    FirstFileBlock first_f_block;
+
+    // ls
+    // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
+    // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
+    int found = 0, i, j = 0;
+
+    // ls #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
+    int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
+
+    // ls bisogna prima verificare che un file o una directory con il nome 'filename' esista già
+    // ls non uso la SimpleFS_readDir perchè il codice seguente è più efficiente con il controllo su !found
+
+    // ls devo scandire ogni elemento della directory d, che può essere un file o un'altra directory
+
+    // ls inizio con il FirstDirectoryBlock
+    for (i = 0; i < d->dcb->num_entries && j < db_len && !found; j++){
+
+        if (d->dcb->file_blocks[j] != -1){
+
+            // ls leggo il primo blocco del file alla posizione corrente
+            DiskDriver_readBlock(d->sfs->disk, &first_f_block, d->dcb->file_blocks[j]);
+
+            // ls se il nome appena letto corrisponde a quello del file o directory che si vuole rimuovere
+            if (!strcmp(first_f_block.fcb.name, filename))
+                found = 1;
+
+            i++;
+        }
+    }
+
+    // ls calcolo indice di blocco nel disco
+    int block_idx = d->dcb->fcb.block_in_disk;
+
+    DirectoryBlock db;
+
+    // ls se non è stato ancora trovato proseguo la ricerca nei successivi DirectoryBlock
+    if (!found && i < d->dcb->num_entries){
+
+        // ls il nuovo indice di blocck è il blocco successivo al corrente
+        block_idx = d->dcb->header.next_block;
+
+        // ls #elementi array file_blocks di DirectoryBlock
+        db_len = sizeof(db.file_blocks) / sizeof(int);
+
+        while (i < d->dcb->num_entries && !found){
+
+            DiskDriver_readBlock(d->sfs->disk, &db, block_idx);
+
+            for (j = 0; i < d->dcb->num_entries && j < db_len; j++){
+
+                if (db.file_blocks[j] != -1){
+
+                    // ls leggo il primo blocco del file alla posizione corrente
+                    DiskDriver_readBlock(d->sfs->disk, &first_f_block, db.file_blocks[j]);
+
+                    // ls se il nome appena letto corrisponde a quello del file o directory che si vuole rimuovere
+                    if (!strcmp(first_f_block.fcb.name, filename))
+                        found = 1;
+
+                    i++;
+                }
+            }
+
+            block_idx = db.header.next_block;
+        }
+    }
+
+    // ls se il file o directory non è stato trovato, non può essere rimosso e restituisco -1
+    if (!found){
+        fprintf(stderr, "Error in SimpleFS_remove: cannot find a file called '%s'\n", filename);
+        return -1;
+    }
+
+    //DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
+
+    d->dcb->num_entries--;
+    DiskDriver_writeBlock(d->sfs->disk, d->dcb, d->dcb->header.block_in_file);
+   
+    remove_blocks(&first_f_block, d->sfs->disk);
+
+    return 0;
+
+}

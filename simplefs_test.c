@@ -340,11 +340,10 @@ int main(int agc, char** argv) {
 	getchar();
 	printf("\n");
 
-	printf("    Apro il file 'file1' nella directory corrente\n");
+	printf("    Provo ad aprire il file 'file2' che NON esiste nella directory corrente\n");
 	printf("--- Test SimpleFS_openFile()\n");
-		FileHandle* file1 = SimpleFS_openFile(d, "file1");
-		printf("    Ho aperto il file '%s' nella directory '%s'\n", file1->fcb->fcb.name, d->dcb->fcb.name);
-		assert(!strcmp(file1->fcb->fcb.name, f1->fcb->fcb.name));
+		FileHandle* file_not_exists = SimpleFS_openFile(d, "file2");
+		assert(file_not_exists == NULL);
 		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  
@@ -615,6 +614,7 @@ int main(int agc, char** argv) {
 	getchar();
 	printf("\n");
 
+	/*
 	printf("    Entro dentro la directory 'dir3'\n");
 	printf("--- Test SimpleFS_changeDir\n");
 		ret = SimpleFS_changeDir(d, "dir3");
@@ -691,6 +691,7 @@ int main(int agc, char** argv) {
 	printf("Premi ENTER per continuare\n");  
 	getchar();
 	printf("\n");
+	*/
 
 	printf("    Provo ad entrare dentro la directory 'dir8' che NON esiste\n");
 	printf("--- Test SimpleFS_changeDir\n");
@@ -727,28 +728,41 @@ int main(int agc, char** argv) {
 	getchar();
 	printf("\n");
 
-	/*
-	printf("    Provo ad aprire il file 'file1' che NON esiste nella directory corrente\n");
+	printf("    Apro il file 'file1' nella directory corrente\n");
 	printf("--- Test SimpleFS_openFile()\n");
-		FileHandle* file_not_exists = SimpleFS_openFile(d, "file1");
-		assert(file_not_exists == NULL);
+		FileHandle* file1 = SimpleFS_openFile(d, "file1");
+		printf("    Ho aperto il file '%s' nella directory '%s'\n", file1->fcb->fcb.name, d->dcb->fcb.name);
+		assert(!strcmp(file1->fcb->fcb.name, f1->fcb->fcb.name));
 		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  
 	getchar();
 	printf("\n");
 
-	printf("    Apro il file 'file5' nella directory corrente\n");
-	printf("--- Test SimpleFS_openFile()\n");
-		FileHandle* file5 = SimpleFS_openFile(d, "file5");
-		printf("    Ho aperto il file '%s' nella directory '%s'\n", file5->fcb->fcb.name, d->dcb->fcb.name);
-		assert(!strcmp(file5->fcb->fcb.name, f5->fcb->fcb.name));
+	printf("    Rimuovo il file 'file2' nella directory corrente\n");
+	printf("--- Test SimpleFS_remove()\n");
+		ret = SimpleFS_remove(d, "file2");
+		assert(ret >= 0);
 		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  
 	getchar();
 	printf("\n");
-	*/
+
+	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
+	printf("    Mi aspetto 1 file e 2 cartelle nella directory\n");
+	printf("--- Test SimpleFS_readDir()\n");
+		ret = SimpleFS_readDir((char**)names, d);
+		assert(ret >= 0);
+		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
+		for(i = 0; i < ret; i++){
+			printf("     \t%s\n", names[i]);
+		}
+	printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
 
   }
 }
