@@ -740,7 +740,7 @@ int main(int agc, char** argv) {
 		char data[10] = {1};
 		ret = SimpleFS_write(file1, data, sizeof(data));
 		printf("    Ora il file '%s' è grande %d bytes\n", file1->fcb->fcb.name, file1->fcb->fcb.size_in_bytes);
-		assert(ret == sizeof(data));
+		assert(ret == sizeof(data) && file1->fcb->fcb.size_in_bytes == 10);
 		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  
@@ -763,6 +763,18 @@ int main(int agc, char** argv) {
 		ret = SimpleFS_seek(file1, 7);
 		printf("    Ho letto dal file '%s' %d bytes\n", file1->fcb->fcb.name, ret);
 		assert(ret == 7);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Scrivo nel file 'file1' 10 bytes di '0' dalla posizione corrente\n");
+	printf("--- Test SimpleFS_write()\n");
+		memset(data, 0, 10);
+		ret = SimpleFS_write(file1, data, sizeof(data));
+		printf("    Ora il file '%s' è grande %d bytes\n", file1->fcb->fcb.name, file1->fcb->fcb.size_in_bytes);
+		assert(ret == sizeof(data) && file1->fcb->fcb.size_in_bytes == 17);
 		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  

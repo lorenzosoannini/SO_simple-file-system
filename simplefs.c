@@ -68,6 +68,7 @@ void SimpleFS_format(SimpleFS* fs){
     root.header.previous_block = -1;
     root.header.next_block = -1;
     root.header.block_in_file = 0;
+    root.header.block_in_disk = fs->disk->header->first_free_block;
 
     // ls popolo il FCB per "/"
     root.fcb.directory_block = -1;
@@ -187,6 +188,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     new_first_f_block->header.previous_block = -1;
     new_first_f_block->header.next_block = -1;
     new_first_f_block->header.block_in_file = 0;
+    new_first_f_block->header.block_in_disk = free_idx;
     new_first_f_block->fcb.directory_block = d->dcb->fcb.block_in_disk;
     new_first_f_block->fcb.block_in_disk = free_idx;
     strcpy(new_first_f_block->fcb.name, filename);
@@ -230,6 +232,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         new_db.header.previous_block = block_idx;
         new_db.header.next_block = -1;
         new_db.header.block_in_file = i / d->dcb->num_entries;
+        new_db.header.block_in_disk = next_db_idx;
         memset(new_db.file_blocks, 0, sizeof(new_db.file_blocks));
         new_db.file_blocks[0] = free_idx;
         // ls scrivo il nuovo blocco su disco
@@ -538,17 +541,19 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
     // ls se ho abbastanza spazio nel blocco corrente
     if (size <= free_bytes_in_block){
 
-        //ls scrivo nel campo data del blocco
+        // ls scrivo nel campo data del blocco
         memcpy(file_data + (block_len - free_bytes_in_block), data, size);
 
-        //ls riscrivo il blocco corrente su disco
+        // ls riscrivo il blocco corrente su disco
         DiskDriver_writeBlock(f->sfs->disk, f->current_block, block_in_disk);
 
-        //ls aggiorno il cursore
-        f->pos_in_file  += size;
+        // ls aggiorno la grandezza del file
+        f->fcb->fcb.size_in_bytes = f->pos_in_file + size;
 
-        f->fcb->fcb.size_in_bytes += size;
-        DiskDriver_writeBlock(f-> sfs->disk, f->fcb, f->fcb->header.block_in_file);
+        // ls aggiorno il cursore
+        f->pos_in_file  += size;
+        
+        DiskDriver_writeBlock(f-> sfs->disk, f->fcb, f->fcb->header.block_in_disk);
 
         return size;
     }
@@ -562,10 +567,10 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
             // ls scrivo nel campo data del blocco fino a che ho spazio libero
             memcpy(file_data + (block_len - free_bytes_in_block), data, free_bytes_in_block);
 
-            //ls riscrivo il blocco corrente su disco
+            // ls riscrivo il blocco corrente su disco
             DiskDriver_writeBlock(f->sfs->disk, f->current_block, block_in_disk);
 
-            //aggiorni cursore
+            // ls aggiorno cursore
             f->pos_in_file  += free_bytes_in_block;
 
             // ls qui salvo il blocco successivo a quello corrente
@@ -583,29 +588,29 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
             f->fcb->fcb.size_in_bytes += free_bytes_in_block;
             f->fcb->fcb.size_in_blocks += 1;
 
-            //ls chiamata ricorsiva per concludere la scrittura
+            // ls chiamata ricorsiva per concludere la scrittura
             return free_bytes_in_block + SimpleFS_write(f, data + free_bytes_in_block, size-free_bytes_in_block);
         }
 
-        //ls se il blocco successivo non è ancora stato creato
+        // ls se il blocco successivo non è ancora stato creato
         else{
 
-            //ls chiedo al DiskDriver un nuovo indice libero
+            // ls chiedo al DiskDriver un nuovo indice libero
             int next_block_idx =  DiskDriver_getFreeBlock(f->sfs->disk, f->sfs->disk->header->first_free_block);
 
-            //ls creo e popolo il nuovo blocco file
+            // ls creo e popolo il nuovo blocco file
             FileBlock next_block = {0};
             next_block.header.previous_block = block_in_disk;
             next_block.header.next_block = -1;
             next_block.header.block_in_file = num_of_block +1;
 
-            //ls scrivo il blocco sul disco
+            // ls scrivo il blocco sul disco
             DiskDriver_writeBlock(f->sfs->disk, &next_block, next_block_idx);
 
-            //ls collego il blocco appena creato alla lista dei blocchi del file f
+            // ls collego il blocco appena creato alla lista dei blocchi del file f
             f->current_block->next_block = next_block_idx;
 
-            //ls la chimata ricorsiva farà la magia
+            // ls la chimata ricorsiva farà la magia
             return SimpleFS_write(f, data, size);
         }
         
@@ -882,7 +887,8 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 
     new_f_dir.header.previous_block = -1;
     new_f_dir.header.next_block = -1;
-    new_f_dir.header.block_in_file = free_idx;
+    new_f_dir.header.block_in_file = 0;
+    new_f_dir.header.block_in_disk = free_idx;
     new_f_dir.fcb.directory_block = d->dcb->fcb.block_in_disk;
     new_f_dir.fcb.block_in_disk = free_idx;
     strcpy(new_f_dir.fcb.name, dirname);
@@ -926,7 +932,8 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 
         new_db.header.previous_block = block_idx;
         new_db.header.next_block = -1;
-        new_db.header.block_in_file = i;
+        new_db.header.block_in_file = i / d->dcb->num_entries;
+        new_db.header.block_in_disk = next_db_idx;
         memset(new_db.file_blocks, 0, sizeof(new_db.file_blocks));
         new_db.file_blocks[0] = free_idx;
         // ls scrivo il nuovo blocco su disco
@@ -959,34 +966,34 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 }
 
 // ls funzione per la rimozione di tutti i blocchi di un file
-void remove_file(FileBlock* readed_block, DiskDriver* disk){
+void remove_file(FileBlock* read_block, DiskDriver* disk){
 
-    if (readed_block->header.next_block == -1)
-        DiskDriver_freeBlock(disk, readed_block->header.block_in_file);
+    if (read_block->header.next_block == -1)
+        DiskDriver_freeBlock(disk, read_block->header.block_in_disk);
 
     else{
         FileBlock* tmp = (FileBlock*) malloc (sizeof(FileBlock));
-        DiskDriver_readBlock(disk, tmp, readed_block->header.next_block);
+        DiskDriver_readBlock(disk, tmp, read_block->header.next_block);
         remove_file(tmp, disk);
         free(tmp);
-        DiskDriver_freeBlock(disk, readed_block->header.block_in_file);
+        DiskDriver_freeBlock(disk, read_block->header.block_in_disk);
     }
 }
 
 // ls funzione per la rimozione di tutti i blocchi di una directory
-void remove_directory(FirstDirectoryBlock* readed_block, DiskDriver* disk){
+void remove_directory(FirstDirectoryBlock* read_block, DiskDriver* disk){
 
     FirstFileBlock first_f_block;
 
     int i, j = 0;
 
-    int db_len = sizeof(readed_block->file_blocks) / sizeof(int);
+    int db_len = sizeof(read_block->file_blocks) / sizeof(int);
 
-    for (i = 0; i < readed_block->num_entries && j < db_len; j++){
+    for (i = 0; i < read_block->num_entries && j < db_len; j++){
 
-        if (readed_block->file_blocks[j] != -1){
+        if (read_block->file_blocks[j] != -1){
 
-            DiskDriver_readBlock(disk, &first_f_block, readed_block->file_blocks[j]);
+            DiskDriver_readBlock(disk, &first_f_block, read_block->file_blocks[j]);
 
             remove_blocks(&first_f_block, disk);
 
@@ -994,21 +1001,21 @@ void remove_directory(FirstDirectoryBlock* readed_block, DiskDriver* disk){
         }
     }
 
-    int block_idx = readed_block->fcb.block_in_disk;
+    int block_idx = read_block->fcb.block_in_disk;
 
     DirectoryBlock db;
 
-    if (i < readed_block->num_entries){
+    if (i < read_block->num_entries){
 
-        block_idx = readed_block->header.next_block;
+        block_idx = read_block->header.next_block;
 
         db_len = sizeof(db.file_blocks) / sizeof(int);
 
-        while (i < readed_block->num_entries){
+        while (i < read_block->num_entries){
 
             DiskDriver_readBlock(disk, &db, block_idx);
 
-            for (j = 0; i < readed_block->num_entries && j < db_len; j++){
+            for (j = 0; i < read_block->num_entries && j < db_len; j++){
 
                 if (db.file_blocks[j] != -1){
 
@@ -1024,7 +1031,7 @@ void remove_directory(FirstDirectoryBlock* readed_block, DiskDriver* disk){
         }
     }
 
-    remove_directory_blocks((DirectoryBlock* )readed_block, disk);
+    remove_directory_blocks((DirectoryBlock* )read_block, disk);
 
 }
 
@@ -1032,25 +1039,25 @@ void remove_directory(FirstDirectoryBlock* readed_block, DiskDriver* disk){
 void remove_directory_blocks (DirectoryBlock* db, DiskDriver* disk){
 
     if (db->header.next_block == -1)
-        DiskDriver_freeBlock(disk, db->header.block_in_file);
+        DiskDriver_freeBlock(disk, db->header.block_in_disk);
 
     else{
         DirectoryBlock tmp;
         DiskDriver_readBlock(disk, &tmp, db->header.next_block);
         remove_directory_blocks(&tmp, disk);
         
-        DiskDriver_freeBlock(disk, db->header.block_in_file);
+        DiskDriver_freeBlock(disk, db->header.block_in_disk);
     }
 }
 
 // ls funzione d'appoggio per la rimozione ricorsiva 
-void remove_blocks(FirstFileBlock* readed_block, DiskDriver* disk){
+void remove_blocks(FirstFileBlock* read_block, DiskDriver* disk){
 
-    if (readed_block->fcb.is_dir)
-        remove_directory((FirstDirectoryBlock*) readed_block, disk);
+    if (read_block->fcb.is_dir)
+        remove_directory((FirstDirectoryBlock*) read_block, disk);
     
     else
-        remove_file((FileBlock*) readed_block, disk);
+        remove_file((FileBlock*) read_block, disk);
 }
 
 // ls
@@ -1147,7 +1154,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
     DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
 
     d->dcb->num_entries--;
-    DiskDriver_writeBlock(d->sfs->disk, d->dcb, d->dcb->header.block_in_file);
+    DiskDriver_writeBlock(d->sfs->disk, d->dcb, d->dcb->header.block_in_disk);
    
     remove_blocks(&first_f_block, d->sfs->disk);
 
