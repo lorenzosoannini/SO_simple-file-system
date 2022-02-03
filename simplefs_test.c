@@ -614,85 +614,6 @@ int main(int agc, char** argv) {
 	getchar();
 	printf("\n");
 
-	/*
-	printf("    Entro dentro la directory 'dir3'\n");
-	printf("--- Test SimpleFS_changeDir\n");
-		ret = SimpleFS_changeDir(d, "dir3");
-		assert(ret == 0);
-	printf("    TEST PASSED\n");
-	printf("\n");
-	printf("Premi ENTER per continuare\n");  
-	getchar();
-	printf("\n");
-
-	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
-	printf("    Mi aspetto 0 file nella directory\n");
-	printf("--- Test SimpleFS_readDir()\n");
-		ret = SimpleFS_readDir((char**)names, d);
-		assert(ret >= 0);
-		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
-
-		printf("\n");
-		for(i = 0; i < ret; i++){
-			printf("     \t%s\n", names[i]);
-		}
-	printf("    TEST PASSED\n");
-	printf("\n");
-	printf("Premi ENTER per continuare\n");  
-	getchar();
-	printf("\n");
-
-	printf("    Creo un nuovo file chiamato 'file6'\n");
-	printf("--- Test SimpleFS_createFile()\n");
-		FileHandle* f6 = SimpleFS_createFile(d, "file6");
-		assert(f6 != NULL);
-	printf("    TEST PASSED\n");
-	printf("\n");
-	printf("Premi ENTER per continuare\n");  
-	getchar();
-	printf("\n");
-
-	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
-	printf("    Mi aspetto 1 file nella directory\n");
-	printf("--- Test SimpleFS_readDir()\n");
-		ret = SimpleFS_readDir((char**)names, d);
-		assert(ret >= 0);
-		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
-		for(i = 0; i < ret; i++){
-			printf("     \t%s\n", names[i]);
-		}
-	printf("    TEST PASSED\n");
-	printf("\n");
-	printf("Premi ENTER per continuare\n");  
-	getchar();
-	printf("\n");
-
-	printf("    Entro dentro la directory padre di 'dir3' (aka: 'dir2')\n");
-	printf("--- Test SimpleFS_changeDir\n");
-		ret = SimpleFS_changeDir(d, "..");
-		assert(ret == 0);
-	printf("    TEST PASSED\n");
-	printf("\n");
-	printf("Premi ENTER per continuare\n");  
-	getchar();
-	printf("\n");
-
-	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
-	printf("    Mi aspetto 1 file e 1 cartella nella directory\n");
-	printf("--- Test SimpleFS_readDir()\n");
-		ret = SimpleFS_readDir((char**)names, d);
-		assert(ret >= 0);
-		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
-		for(i = 0; i < ret; i++){
-			printf("     \t%s\n", names[i]);
-		}
-	printf("    TEST PASSED\n");
-	printf("\n");
-	printf("Premi ENTER per continuare\n");  
-	getchar();
-	printf("\n");
-	*/
-
 	printf("    Provo ad entrare dentro la directory 'dir8' che NON esiste\n");
 	printf("--- Test SimpleFS_changeDir\n");
 		ret = SimpleFS_changeDir(d, "dir8");
@@ -753,6 +674,31 @@ int main(int agc, char** argv) {
 	getchar();
 	printf("\n");
 
+	printf("    Rimuovo la cartella 'dir2' nella directory corrente\n");
+	printf("--- Test SimpleFS_remove()\n");
+		ret = SimpleFS_remove(d, "dir2");
+		assert(ret >= 0);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Leggo il nome di tutti i file nella cartella corrente\n");
+	printf("    Mi aspetto 1 file e 1 cartelle nella directory\n");
+	printf("--- Test SimpleFS_readDir()\n");
+		ret = SimpleFS_readDir((char**)names, d);
+		assert(ret >= 0);
+		printf("    Ho trovato %d file(s) nella cartella corrente:\n", ret);
+		for(i = 0; i < ret; i++){
+			printf("     \t%s\n", names[i]);
+		}
+	printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
 	printf("    Provo a rimuovere il file 'file4' che NON esiste nella directory corrente\n");
 	printf("--- Test SimpleFS_remove()\n");
 		ret = SimpleFS_remove(d, "file4");
@@ -783,6 +729,40 @@ int main(int agc, char** argv) {
 		FileHandle* file1 = SimpleFS_openFile(d, "file1");
 		printf("    Ho aperto il file '%s' nella directory '%s'\n", file1->fcb->fcb.name, d->dcb->fcb.name);
 		assert(!strcmp(file1->fcb->fcb.name, f1->fcb->fcb.name));
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Scrivo nel file 'file1' 10 bytes di '1'\n");
+	printf("--- Test SimpleFS_write()\n");
+		char data[10] = {1};
+		ret = SimpleFS_write(file1, data, sizeof(data));
+		printf("    Ora il file '%s' è grande %d bytes\n", file1->fcb->fcb.name, file1->fcb->fcb.size_in_bytes);
+		assert(ret == sizeof(data));
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Sposto il cursore di 'file1' alla posizione 0\n");
+	printf("--- Test SimpleFS_seek()\n");
+		ret = SimpleFS_seek(file1, 0);
+		printf("    Ho letto dal file '%s' %d bytes\n", file1->fcb->fcb.name, ret);
+		assert(ret == -10);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Sposto il cursore di 'file1' alla posizione 7\n");
+	printf("--- Test SimpleFS_seek()\n");
+		ret = SimpleFS_seek(file1, 7);
+		printf("    Ho letto dal file '%s' %d bytes\n", file1->fcb->fcb.name, ret);
+		assert(ret == 7);
 		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  
