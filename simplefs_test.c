@@ -751,7 +751,7 @@ int main(int agc, char** argv) {
 	printf("--- Test SimpleFS_seek()\n");
 		ret = SimpleFS_seek(file1, 0);
 		printf("    Ho letto dal file '%s' %d bytes\n", file1->fcb->fcb.name, ret);
-		assert(ret == -10);
+		assert(ret == 10);
 		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  

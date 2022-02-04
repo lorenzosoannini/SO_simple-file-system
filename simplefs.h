@@ -10,6 +10,7 @@ typedef struct {
   int previous_block; // chained list (previous block)
   int next_block;     // chained list (next_block)
   int block_in_file; // position in the file, if 0 we have a file control block
+  int block_in_disk;
 } BlockHeader;
 
 
@@ -143,7 +144,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname);
 // if a directory, it removes recursively all contained files
 int SimpleFS_remove(DirectoryHandle* d, char* filename);
 
-void remove_file(FileBlock* readed_block, DiskDriver* disk);
-void remove_directory(FirstDirectoryBlock* readed_block, DiskDriver* disk);
+void remove_file(FileBlock* read_block, DiskDriver* disk);
+void remove_directory(FirstDirectoryBlock* read_block, DiskDriver* disk);
 void remove_directory_blocks (DirectoryBlock* db, DiskDriver* disk);
-void remove_blocks(FirstFileBlock* readed_block, DiskDriver* disk);
+void remove_blocks(FirstFileBlock* read_block, DiskDriver* disk);

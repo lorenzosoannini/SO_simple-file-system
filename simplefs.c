@@ -58,9 +58,6 @@ void SimpleFS_format(SimpleFS* fs){
     char disk_filename[255];
     sprintf(disk_filename, "disk/%ld.txt", time(NULL));
 
-    // ls inizializzo il DiskDriver per il disco corrente
-    //DiskDriver_init(fs->disk, disk_filename, fs->disk->header->num_blocks);
-
     // ls creo il primo blocco della top level directory "/"
     FirstDirectoryBlock root;
 
@@ -362,7 +359,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
         }
     }
 
-    // restituisco il numero di nomi di file letti nella directory
+    // ls restituisco il numero di nomi di file letti nella directory
     return i;
 }
 
@@ -492,10 +489,10 @@ int SimpleFS_close(FileHandle* f){
 // restituisce il numero di byte scritti
 int SimpleFS_write(FileHandle* f, void* data, int size){
 
-    // ls lunghezza blocco dati primo blocco
+    // ls lunghezza data del primo blocco (FirstFileBlock)
     int first_f_block_len = BLOCK_SIZE - sizeof(FileControlBlock) - sizeof(BlockHeader);
 
-    // ls lunghezza blocco dati altri blocchi
+    // ls lunghezza data degli altri blocchi (FileBlock)
     int f_block_len = BLOCK_SIZE - sizeof(BlockHeader);
 
     int block_len;
@@ -503,15 +500,13 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
     // ls #bytes liberi nel blocco dati corrente
     int free_bytes_in_block;
 
-    // ls numero di blocco file corrente
-    int num_of_block = f->current_block->block_in_file;
-
     // ls numero di blocco disco dove è mappato il blocco file
     int block_in_disk;
 
     // ls qui andrò a salvare il puntatore al campo data del blocco file
     char* file_data;
 
+    // ls inizializzazione variabili condizionale
     // ls se mi trovo nel FirstFileBlock del file
     if (f->current_block->block_in_file == 0){
 
@@ -527,7 +522,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
     // ls altrimenti sono in un FileBlock 
     else{
 
-        free_bytes_in_block = f_block_len - (f->pos_in_file - first_f_block_len - ((num_of_block - 1) * f_block_len));
+        free_bytes_in_block = f_block_len - (f->pos_in_file - first_f_block_len - ((f->current_block->block_in_file - 1) * f_block_len));
 
         
         file_data = ((FileBlock*)f->current_block)->data;
@@ -602,7 +597,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
             FileBlock next_block = {0};
             next_block.header.previous_block = block_in_disk;
             next_block.header.next_block = -1;
-            next_block.header.block_in_file = num_of_block +1;
+            next_block.header.block_in_file = f->current_block->block_in_file + 1;
 
             // ls scrivo il blocco sul disco
             DiskDriver_writeBlock(f->sfs->disk, &next_block, next_block_idx);
@@ -612,16 +607,114 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 
             // ls la chimata ricorsiva farà la magia
             return SimpleFS_write(f, data, size);
-        }
-        
-    } 
-    
+        }        
+    }    
 }
 
 // ls
 // legge nel file, nella posizione corrente i byte di dimensione memorizzati nei dati
 // restituisce il numero di byte letti
-int SimpleFS_read(FileHandle* f, void* data, int size);
+int SimpleFS_read(FileHandle* f, void* data, int size){
+
+    // ls lunghezza data del primo blocco (FirstFileBlock)
+    int first_f_block_len = BLOCK_SIZE - sizeof(FileControlBlock) - sizeof(BlockHeader);
+
+    // ls lunghezza data degli altri blocchi (FileBlock)
+    int f_block_len = BLOCK_SIZE - sizeof(BlockHeader);
+
+    int block_len;
+
+    // ls #bytes liberi nel blocco dati corrente
+    int free_bytes_in_block;
+
+    // ls numero di blocco disco dove è mappato il blocco file
+    int block_in_disk;
+
+    // ls qui andrò a salvare il puntatore al campo data del blocco file
+    char* file_data;
+
+    // ls inizializzazione variabili condizionale
+    // ls se mi trovo nel FirstFileBlock del file
+    if (f->current_block->block_in_file == 0){
+
+        free_bytes_in_block = first_f_block_len - f->pos_in_file;
+        
+        file_data = ((FirstFileBlock*)f->current_block)->data;
+
+        block_len = first_f_block_len;
+
+        block_in_disk = f->fcb->fcb.block_in_disk;
+    }
+
+    // ls altrimenti sono in un FileBlock 
+    else{
+
+        free_bytes_in_block = f_block_len - (f->pos_in_file - first_f_block_len - ((f->current_block->block_in_file - 1) * f_block_len));
+
+        
+        file_data = ((FileBlock*)f->current_block)->data;
+
+        block_len = f_block_len;
+
+        block_in_disk = f->current_block->block_in_file;
+    }
+
+    // ls inizio a leggere dal file
+    // ls se quello che devo leggere è tutto nel blocco corrente
+    if (size <= free_bytes_in_block){
+
+        // ls leggo dal campo data del blocco
+        memcpy(data, file_data + (block_len - free_bytes_in_block), size);
+
+        // ls aggiorno il cursore
+        f->pos_in_file  += size;
+        
+        DiskDriver_writeBlock(f-> sfs->disk, f->fcb, f->fcb->header.block_in_disk);
+
+        return size;
+    }
+
+    // ls se i bytes da leggere non sono tutti nel blocco corrente
+    else{
+
+        // ls se esiste il blocco successivo
+        if(f->current_block->next_block != -1){
+
+            // ls leggo dal campo data del blocco fino a che ho bytes da leggere
+            memcpy(data, file_data + (block_len - free_bytes_in_block), free_bytes_in_block);
+
+            // ls aggiorno cursore
+            f->pos_in_file  += free_bytes_in_block;
+
+            // ls qui salvo il blocco successivo a quello corrente
+            FileBlock* next_block = malloc(sizeof(FileBlock));
+
+            // ls leggo dal disco il blocco successivo
+            DiskDriver_readBlock(f->sfs->disk, next_block, f->current_block->next_block);
+            
+            if(f->current_block != (BlockHeader*)f->fcb)
+                free(f->current_block);
+            
+            // ls mi muovo al blocco successivo
+            f->current_block = (BlockHeader*)next_block;
+
+            // ls chiamata ricorsiva per concludere la lettura
+            return free_bytes_in_block + SimpleFS_read(f, data + free_bytes_in_block, size-free_bytes_in_block);
+        }
+
+        // ls altrimenti sono nell'ultimo blocco
+        else{
+
+            // ls leggo dal campo data del blocco fino a che ho bytes da leggere
+            memcpy(data, file_data + (block_len - free_bytes_in_block), free_bytes_in_block);
+
+            // ls aggiorno cursore
+            f->pos_in_file  += free_bytes_in_block;
+
+            return free_bytes_in_block;
+        }        
+    }
+}
 
 // ls
 // restituisce il numero di byte letti (spostando il puntatore corrente su pos)
@@ -644,23 +737,26 @@ int SimpleFS_seek(FileHandle* f, int pos){
     int delta_pos = pos - f->pos_in_file;
     int free_bytes_in_block;
 
+    // ls inizializzazione variabile condizionale
     if(f->current_block->block_in_file == 0)
         free_bytes_in_block = (BLOCK_SIZE - sizeof(FileControlBlock) - sizeof(BlockHeader)) - f->pos_in_file;
     else
         free_bytes_in_block = (BLOCK_SIZE - sizeof(BlockHeader)) - f->pos_in_file;
 
+    // ls se c'è abbastanza spazio nel blocco corrente
     if(delta_pos <= free_bytes_in_block){
 
         f->pos_in_file += delta_pos;
 
-        return delta_pos;
+        return delta_pos > 0 ? delta_pos : -delta_pos;
     }
 
+    // ls altrimenti vado al blocco successivo
     else{
 
         f->pos_in_file += free_bytes_in_block;
 
-        FileBlock * tmp = calloc(1, sizeof(FileBlock));
+        FileBlock * tmp = malloc(sizeof(FileBlock));
 
         DiskDriver_readBlock(f->sfs->disk, tmp, f->current_block->next_block);
 
@@ -669,7 +765,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
             
         f->current_block = (BlockHeader*)tmp;
 
-	    return free_bytes_in_block + SimpleFS_seek(f, pos);
+	    return free_bytes_in_block > 0 ? free_bytes_in_block + SimpleFS_seek(f, pos) : -free_bytes_in_block + SimpleFS_seek(f, pos);
     }
 }
 
@@ -693,10 +789,10 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
         // ls leggo il FirstDirectoryBlock del padre di '..'
         DiskDriver_readBlock(d->sfs->disk, parent_of_parent, d->directory->fcb.directory_block);
 
-        //ls varibile di appoggio per la successiva free del vecchio puntatore
+        // ls varibile di appoggio per la successiva free del vecchio puntatore
         FirstDirectoryBlock* tmp = d->dcb;
 
-        //ls popolo l'handle di '..'
+        // ls popolo l'handle di '..'
         d->dcb = d->directory; // ls l'handle d punta ora come primo blocco della directory corrente alla directory '..'
         d->directory = parent_of_parent; // ls l'handle d punta ora come primo blocco della directory padre al padre di '..'
         
@@ -900,7 +996,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 
     // ls gestisco i blocchi del disco
 
-    // se c'è ancora spazio nel blocco corrente
+    // ls se c'è ancora spazio nel blocco corrente
     if(j < db_len){
 
         // ls se la directory padre ha un solo blocco, il FirstDirectoryBlock
@@ -917,7 +1013,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
         }
         
     }
-    // altrimenti devo creare un nuovo blocco per la directory padre
+    // ls altrimenti devo creare un nuovo blocco per la directory padre
     else{
 
         // ls chiedo al disco un nuovo indice di blocco libero
@@ -1159,5 +1255,4 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
     remove_blocks(&first_f_block, d->sfs->disk);
 
     return 0;
-
 }
