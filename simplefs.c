@@ -627,9 +627,6 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
     // ls #bytes liberi nel blocco dati corrente
     int free_bytes_in_block;
 
-    // ls numero di blocco disco dove è mappato il blocco file
-    int block_in_disk;
-
     // ls qui andrò a salvare il puntatore al campo data del blocco file
     char* file_data;
 
@@ -642,8 +639,6 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
         file_data = ((FirstFileBlock*)f->current_block)->data;
 
         block_len = first_f_block_len;
-
-        block_in_disk = f->fcb->fcb.block_in_disk;
     }
 
     // ls altrimenti sono in un FileBlock 
@@ -655,8 +650,6 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
         file_data = ((FileBlock*)f->current_block)->data;
 
         block_len = f_block_len;
-
-        block_in_disk = f->current_block->block_in_file;
     }
 
     // ls inizio a leggere dal file

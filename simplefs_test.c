@@ -735,12 +735,39 @@ int main(int agc, char** argv) {
 	getchar();
 	printf("\n");
 
-	printf("    Scrivo nel file 'file1' 10 bytes di '1'\n");
+	printf("    Scrivo nel file 'file1' 10 bytes di 'a'\n");
 	printf("--- Test SimpleFS_write()\n");
-		char data[10] = {1};
-		ret = SimpleFS_write(file1, data, sizeof(data));
+		char write_data[50] = {0};
+		memset(write_data, 'a', 10);
+		ret = SimpleFS_write(file1, write_data, 10);
 		printf("    Ora il file '%s' è grande %d bytes\n", file1->fcb->fcb.name, file1->fcb->fcb.size_in_bytes);
-		assert(ret == sizeof(data) && file1->fcb->fcb.size_in_bytes == 10);
+		assert(ret == 10 && file1->fcb->fcb.size_in_bytes == 10);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Sposto il cursore di 'file1' alla posizione 0\n");
+	printf("--- Test SimpleFS_seek()\n");
+		ret = SimpleFS_seek(file1, 0);
+		printf("    Ho letto dal file '%s' %d bytes\n", file1->fcb->fcb.name, ret);
+		assert(ret == 10);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Leggo dal file 'file1' 10 bytes dalla posizione corrente\n");
+	printf("--- Test SimpleFS_read()\n");
+		char read_data[128];
+		ret = SimpleFS_read(file1, read_data, 10);
+		printf("    Ho letto dal file '%s' i seguenti %d bytes:\n", file1->fcb->fcb.name, ret);
+		for(i = 0; i < ret; i++){
+			printf("    \tByte #%d: \t%c\n", i+1, read_data[i]);
+		}
+		assert(ret == 10);
 		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  
@@ -769,12 +796,37 @@ int main(int agc, char** argv) {
 	getchar();
 	printf("\n");
 
-	printf("    Scrivo nel file 'file1' 10 bytes di '0' dalla posizione corrente\n");
+	printf("    Scrivo nel file 'file1' 10 bytes di 'b' dalla posizione corrente\n");
 	printf("--- Test SimpleFS_write()\n");
-		memset(data, 0, 10);
-		ret = SimpleFS_write(file1, data, sizeof(data));
+		memset(write_data, 'b', 10);
+		ret = SimpleFS_write(file1, write_data, 10);
 		printf("    Ora il file '%s' è grande %d bytes\n", file1->fcb->fcb.name, file1->fcb->fcb.size_in_bytes);
-		assert(ret == sizeof(data) && file1->fcb->fcb.size_in_bytes == 17);
+		assert(ret == 10 && file1->fcb->fcb.size_in_bytes == 17);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Sposto il cursore di 'file1' alla posizione 0\n");
+	printf("--- Test SimpleFS_seek()\n");
+		ret = SimpleFS_seek(file1, 0);
+		printf("    Ho letto dal file '%s' %d bytes\n", file1->fcb->fcb.name, ret);
+		assert(ret == 17);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Leggo dal file 'file1' 17 bytes dalla posizione corrente\n");
+	printf("--- Test SimpleFS_read()\n");
+		ret = SimpleFS_read(file1, read_data, 17);
+		printf("    Ho letto dal file '%s' i seguenti %d bytes:\n", file1->fcb->fcb.name, ret);
+		for(i = 0; i < ret; i++){
+			printf("    \tByte #%d: \t%c\n", i+1, read_data[i]);
+		}
+		assert(ret == 17);
 		printf("    TEST PASSED\n");
 	printf("\n");
 	printf("Premi ENTER per continuare\n");  
