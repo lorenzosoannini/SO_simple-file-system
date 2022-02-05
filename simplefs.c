@@ -54,10 +54,6 @@ void SimpleFS_format(SimpleFS* fs){
         return;
     }
 
-    // ls creo un file name per il disk
-    char disk_filename[255];
-    sprintf(disk_filename, "disk/%ld.txt", time(NULL));
-
     // ls creo il primo blocco della top level directory "/"
     FirstDirectoryBlock root;
 
