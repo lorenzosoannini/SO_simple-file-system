@@ -299,12 +299,12 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
             // ls se non è una directory (aka è un file), ne aggiungo il nome all'array names
             if (!first_f_block.fcb.is_dir){
 
-                names[i] = strdup(first_f_block.fcb.name);
+                strcpy(names[i], first_f_block.fcb.name);
             }
             // ls se è una directory aggiungo "(d)" al nome
             else{
 
-                names[i] = strdup(strcat(first_f_block.fcb.name, " (d)"));
+                strcpy(names[i], strcat(first_f_block.fcb.name, " (d)"));
             }
 
             i++;
