@@ -1,7 +1,6 @@
 #include "simplefs.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
 #include <string.h>
 
 // JM Dichiarazione funzioni e descrizioni di tali
@@ -55,7 +54,7 @@ void SimpleFS_format(SimpleFS* fs){
     }
 
     // ls creo il primo blocco della top level directory "/"
-    FirstDirectoryBlock root;
+    FirstDirectoryBlock root = {0};
 
     // ls popolo la header
     root.header.previous_block = -1;
@@ -175,7 +174,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     }
     
     // ls creo e popolo il primo ed unico blocco del file vuoto da creare
-    FirstFileBlock* new_first_f_block = malloc(sizeof(FirstFileBlock));
+    FirstFileBlock* new_first_f_block = calloc(1, sizeof(FirstFileBlock));
 
     new_first_f_block->header.previous_block = -1;
     new_first_f_block->header.next_block = -1;
@@ -977,7 +976,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
     }
 
     // ls creo un nuovo FirstDirecotryBlock e lo popolo
-    FirstDirectoryBlock new_f_dir;
+    FirstDirectoryBlock new_f_dir = {0};
 
     new_f_dir.header.previous_block = -1;
     new_f_dir.header.next_block = -1;

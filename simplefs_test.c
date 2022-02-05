@@ -28,7 +28,7 @@ void binary_print(char* str) {
 }
 
 //JM first look to bitmap test
-int main(int agc, char** argv) {
+int main(int argc, char** argv) {
 		
   	printf("░██████╗██╗███╗░░░███╗██████╗░██╗░░░░░███████╗\n");
 	printf("██╔════╝██║████╗░████║██╔══██╗██║░░░░░██╔════╝\n");
@@ -269,7 +269,7 @@ int main(int agc, char** argv) {
 	printf("\n--- Creo e inizializzo un nuovo disco\n");
 		//inizializzo il DiskDriver e la bitmap
 		DiskDriver disk;
-		DiskDriver_init(&disk, "file_test/testosterone.txt", 50); 
+		DiskDriver_init(&disk, "file_test/SimpleFS.disk", 50); 
 	printf("    Inizializzazione Disk Driver Riuscita\n");
 		BitMap bitmap;
 		bitmap.num_bits = disk.header->bitmap_entries * 8;
