@@ -772,10 +772,21 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
     // ls se dirname == '..' devo andare alla directory padre
     if(!strcmp("..", dirname)){
 
+        // ls se sono nella top level directory restituisco errore
+		if(strcmp(d->dcb->fcb.name,"/") == 0) {
+            fprintf(stderr, "Error in SimpleFS_changeFile: current directory is top level directory\n");
+			return -1;
+        }
+
         // ls qui salvo le informazioni della directory padre della directory '..' (per popolare l'handle di '..')
         FirstDirectoryBlock* parent_of_parent = malloc(sizeof(FirstDirectoryBlock));
         // ls leggo il FirstDirectoryBlock del padre di '..'
-        DiskDriver_readBlock(d->sfs->disk, parent_of_parent, d->directory->fcb.directory_block);
+        int ret = DiskDriver_readBlock(d->sfs->disk, parent_of_parent, d->directory->fcb.directory_block);
+        // ls se ret < 0 ho letto un blocco invalido -> '..' == '/' che non ha una directory padre
+        if(ret < 0){
+            free(parent_of_parent);
+            parent_of_parent = NULL;
+        }
 
         // ls varibile di appoggio per la successiva free del vecchio puntatore
         FirstDirectoryBlock* tmp = d->dcb;
@@ -783,6 +794,9 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
         // ls popolo l'handle di '..'
         d->dcb = d->directory; // ls l'handle d punta ora come primo blocco della directory corrente alla directory '..'
         d->directory = parent_of_parent; // ls l'handle d punta ora come primo blocco della directory padre al padre di '..'
+        d->pos_in_dir = 0;
+		d->pos_in_block = d->dcb->fcb.block_in_disk;
+        d->current_block = &(d->dcb->header);
         
         free(tmp);
         return 0;
@@ -796,7 +810,7 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
     // ls
     // i = indice per scandire tutti gli elementi della directory -> gestisce num_entries
     // j = indice corrente del blocco del corrispondente file corrente -> gestisce file_blocks[]
-    int found, i, j = 0;
+    int found = 0, i, j = 0;
 
     // ls #elementi array file_blocks (diverso se FirstDirectoryBlock o DirectoryBlock)
     int db_len = sizeof(d->dcb->file_blocks) / sizeof(int);
