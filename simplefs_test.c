@@ -833,5 +833,74 @@ int main(int agc, char** argv) {
 	getchar();
 	printf("\n");
 
+	printf("    Chiudo il FileHandle f1 per il file 'file1'\n");
+	printf("--- Test SimpleFS_close()\n");
+		ret = SimpleFS_close(f1);
+		assert(ret >= 0);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Chiudo il FileHandle file1 per il file 'file1'\n");
+	printf("--- Test SimpleFS_close()\n");
+		ret = SimpleFS_close(file1);
+		assert(ret >= 0);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Chiudo il FileHandle per il file 'file2'\n");
+	printf("--- Test SimpleFS_close()\n");
+		ret = SimpleFS_close(f2);
+		assert(ret >= 0);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Chiudo il FileHandle per il file 'file3'\n");
+	printf("--- Test SimpleFS_close()\n");
+		ret = SimpleFS_close(f3);
+		assert(ret >= 0);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Chiudo il FileHandle per il file 'file4'\n");
+	printf("--- Test SimpleFS_close()\n");
+		ret = SimpleFS_close(f4);
+		assert(ret >= 0);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	printf("    Chiudo il FileHandle per il file 'file5'\n");
+	printf("--- Test SimpleFS_close()\n");
+		ret = SimpleFS_close(f5);
+		assert(ret >= 0);
+		printf("    TEST PASSED\n");
+	printf("\n");
+	printf("Premi ENTER per continuare\n");  
+	getchar();
+	printf("\n");
+
+	// ls pulizia della memoria allocata
+	for(i = 0; i < sizeof(names)/sizeof(char*); i++){
+		free(names[i]);
+	}
+
+	free(d->directory);
+	free(d->dcb);
+	free(d);
+
   }
 }

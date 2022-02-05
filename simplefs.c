@@ -35,7 +35,7 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
     d_handle->directory = NULL; // ls non ha una directory padre
     d_handle->current_block = &(firstdirectoryblock_->header);
     d_handle->pos_in_dir = 0;
-    d_handle->pos_in_block = firstdirectoryblock_->fcb.block_in_disk;
+    d_handle->pos_in_block = 0;
 
     return d_handle;
 }
@@ -81,7 +81,6 @@ void SimpleFS_format(SimpleFS* fs){
 
     // ls chiamo le funzioni del DiskDriver per memorzzare tutto nel disco
     DiskDriver_writeBlock(fs->disk, &root, fs->disk->header->first_free_block);
-    DiskDriver_flush(fs->disk);
 }
 
 // ls
@@ -208,7 +207,6 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
             db.file_blocks[j] = free_idx;
             // ls e scrivo il blocco su disco
             DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
-            DiskDriver_flush(d->sfs->disk);
         }
         
     }
@@ -234,7 +232,6 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
         new_db.file_blocks[0] = free_idx;
         // ls scrivo il nuovo blocco su disco
         DiskDriver_writeBlock(d->sfs->disk, &new_db, next_db_idx);
-        DiskDriver_flush(d->sfs->disk);
 
         // ls se la directory padre aveva un solo blocco
         if(d->dcb->header.next_block == -1)
@@ -244,7 +241,6 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 
             db.header.next_block = next_db_idx;
             DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
-            DiskDriver_flush(d->sfs->disk);
         }
 
         // ls aggiorno il FileControlBlock della directory
@@ -256,7 +252,6 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
     DiskDriver_writeBlock(d->sfs->disk, new_first_f_block, free_idx);
     d->dcb->num_entries++;
     DiskDriver_writeBlock(d->sfs->disk, d->dcb, d->dcb->fcb.block_in_disk);
-    DiskDriver_flush(d->sfs->disk);
 
     // ls alloco e popolo la struttura FileHandle da restituire
     FileHandle* f_handle = malloc(sizeof(FileHandle));
@@ -1002,7 +997,6 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
             db.file_blocks[j] = free_idx;
             // ls e scrivo il blocco su disco
             DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
-            DiskDriver_flush(d->sfs->disk);
         }
         
     }
@@ -1027,7 +1021,6 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
         new_db.file_blocks[0] = free_idx;
         // ls scrivo il nuovo blocco su disco
         DiskDriver_writeBlock(d->sfs->disk, &new_db, next_db_idx);
-        DiskDriver_flush(d->sfs->disk);
 
         // ls se la directory padre aveva un solo blocco
         if(d->dcb->header.next_block == -1)
@@ -1037,7 +1030,6 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 
             db.header.next_block = next_db_idx;
             DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
-            DiskDriver_flush(d->sfs->disk);
         }
 
         // ls aggiorno il FileControlBlock della directory
@@ -1049,7 +1041,6 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
     DiskDriver_writeBlock(d->sfs->disk, &new_f_dir, free_idx);
     d->dcb->num_entries++;
     DiskDriver_writeBlock(d->sfs->disk, d->dcb, d->dcb->fcb.block_in_disk);
-    DiskDriver_flush(d->sfs->disk);
 
     return 0;
 }
@@ -1121,7 +1112,6 @@ void remove_directory(FirstDirectoryBlock* read_block, DiskDriver* disk){
     }
 
     remove_directory_blocks((DirectoryBlock* )read_block, disk);
-
 }
 
 // ls funzione d'appoggio per la ricorsione
@@ -1224,6 +1214,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
                     if (!strcmp(first_f_block.fcb.name, filename)){
                         found = 1;
                         db.file_blocks[j] = -1;
+                        DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
                     }
 
                     i++;
@@ -1238,9 +1229,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
     if (!found){
         fprintf(stderr, "Error in SimpleFS_remove: cannot find a file called '%s'\n", filename);
         return -1;
-    }
-
-    DiskDriver_writeBlock(d->sfs->disk, &db, block_idx);
+    }    
 
     d->dcb->num_entries--;
     DiskDriver_writeBlock(d->sfs->disk, d->dcb, d->dcb->header.block_in_disk);
