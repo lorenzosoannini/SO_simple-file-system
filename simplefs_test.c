@@ -306,7 +306,7 @@ int main(int argc, char** argv) {
 	printf("██████╔╝██║██████╔╝██║░╚██╗██████╔╝██║░░██║██║░░╚██╔╝░░███████╗██║░░██║\n");
 	printf("╚═════╝░╚═╝╚═════╝░╚═╝░░╚═╝╚═════╝░╚═╝░░╚═╝╚═╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝\n");
 	printf("Hai scelto di testare il DiskDriver\n");
-	
+	getchar();
 	//JM effettuo il test DiskDriver_init   
 		printf("\n--- Test DiskDriver_init()");
 			//inizializzo il DiskDriver e la bitmap
@@ -322,94 +322,149 @@ int main(int argc, char** argv) {
 				BitMap_set(&bitmap, i, 0);
 				
 		printf("\n    Creazione Bitmap e Azzeramento riuscito");
+		printf("\n\n    CLICCA ENTER PER ANDARE AVANTI ");
+		getchar();
+		printf("\n\n\n");
 	//JM effettuo il test DiskDriver_getFreeBlock()
-	
+		
 		printf("\n\n--- Test DiskDriver_getFreeBlock()");
 		printf("\n    Il primo blocco libero è %d \n", disk.header->first_free_block); 
-		
+		printf("\n\n    CLICCA ENTER PER ANDARE AVANTI ");
+		getchar();
+		printf("\n\n\n");
 	//JM effettuo il test DiskDriver_writeBlock()  
 		printf("\n--- Test DiskDriver_writeBlock()");
-		printf("\n    Output bitmap entries before DiskDriver_writeBlock() : ");
+		printf("\n\n    Output bitmap entries before DiskDriver_writeBlock() : ");
 		binary_print(bitmap.entries);
+		getchar();
 		
 		ret =  DiskDriver_writeBlock(&disk, "Panino",1);
 		if(ret == 0) printf("\n    Scrittura <Panino> sul blocco 1 con SUCCESSO : ");
 		else printf("TEST FAILED\n");
-		binary_print(bitmap.entries);
-		
+		binary_print_ablock(bitmap.entries,1);
+		printf("\n    ");
+		binary_print_block(bitmap.entries,1);
+		getchar();
+
+
 		ret =  DiskDriver_writeBlock(&disk, "Alea Iacta Est",2);
-		if(ret == 0) printf("\n    Scrittura <Alea Iacta Est> sul blocco 2 con SUCCESSO : ");
+		if(ret == 0) printf("    Scrittura <Alea Iacta Est> sul blocco 2 con SUCCESSO : ");
 		else printf("TEST FAILED\n");
-		binary_print(bitmap.entries);
-		
-		ret =  DiskDriver_writeBlock(&disk, "Test",3);
-		if(ret == 0) printf("\n    Scrittura <Test> sul blocco 3 con SUCCESSO : ");
+		binary_print_ablock(bitmap.entries,2);
+		printf("\n    ");
+		binary_print_block(bitmap.entries,2);
+		getchar();
+
+		ret =  DiskDriver_writeBlock(&disk, "Test",23);
+		if(ret == 0) printf("    Scrittura <Test> sul blocco 23 con SUCCESSO : ");
 		else printf("TEST FAILED\n");
-		binary_print(bitmap.entries);
+		binary_print_ablock(bitmap.entries,23);
+		printf("\n    ");
+		binary_print_block(bitmap.entries,23);
+		getchar();
+
 		
-		ret =  DiskDriver_writeBlock(&disk, "Tastiera",4);
-		if(ret == 0) printf("\n    Scrittura <Tastiera> sul blocco 4 con SUCCESSO : ");
+		ret =  DiskDriver_writeBlock(&disk, "Tastiera",14);
+		if(ret == 0) printf("    Scrittura <Tastiera> sul blocco 14 con SUCCESSO : ");
 		else printf("TEST FAILED\n");
-		binary_print(bitmap.entries);
-		
-		printf("\n    Output bitmap entries after DiskDriver_writeBlock()  : ");
-		binary_print(bitmap.entries); 
-		
+		binary_print_ablock(bitmap.entries,14);
+		printf("\n    ");
+		binary_print_block(bitmap.entries,14);
+		getchar();
+
+		printf("\n");
+		printf("    STAMPO BITMAP ATTUALE in bit: \n\n    ");
+		for (int i=0;i/8<strlen(bitmap.entries);i+=8){
+			binary_print_ablock(bitmap.entries,i);
+			printf("\n    ");
+		}
+		printf("\n    STAMPO BITMAP ATTUALE in blocchi: \n\n    ");
+		for (int i=0;i/8<strlen(bitmap.entries);i+=8){
+			binary_print_block(bitmap.entries,i);
+			printf("\n    ");
+		}
+			
 		printf("\n");
 		
 	//JM effettuo il test DiskDriver_readBlock()
-		 
+		printf("\n\n    CLICCA ENTER PER ANDARE AVANTI ");
+		getchar();
+		printf("\n\n\n"); 
 		printf("\n--- Test DiskDriver_readBlock()");
-		printf("\n    Output bitmap entries before DiskDriver_readBlock() : ");
-		binary_print(bitmap.entries);
-		 
+		
 		void * dest = malloc(BLOCK_SIZE);
 		
 		ret =  DiskDriver_readBlock(&disk, dest,1);
 		
 		if (ret == -1) printf("\n    TEST FAILED");
 		else 	printf("\n    Lettura con successo di <%s> nel blocco 1", (char *) dest);
-
-	
+		getchar(); 
+		printf("\n");
 		ret =  DiskDriver_readBlock(&disk, dest, 2);
 		if (ret == -1) printf("\n    TEST FAILED");
-		else printf("\n    Lettura con successo di <%s> nel blocco 2", (char *) dest);
-		
-		ret =  DiskDriver_readBlock(&disk, dest, 3);
-		if (ret == -1) printf("\n    TEST FAILED");
-		else printf("\n    Lettura con successo di <%s> nel blocco 3", (char *) dest);
-		
-		ret =  DiskDriver_readBlock(&disk, dest, 4);
-		if (ret == -1) printf("\n    TEST FAILED");
-		printf("\n    Lettura con successo di <%s> nel blocco 4", (char *) dest);
-		
-		printf("\n    Output bitmap entries after DiskDriver_readBlock()  : ");
-		binary_print(bitmap.entries); 
+		else printf("    Lettura con successo di <%s> nel blocco 2", (char *) dest);
+		getchar(); 
 		printf("\n");
-		
+		ret =  DiskDriver_readBlock(&disk, dest, 23);
+		if (ret == -1) printf("\n    TEST FAILED");
+		else printf("    Lettura con successo di <%s> nel blocco 23", (char *) dest);
+		getchar(); 
+		printf("\n");
+		ret =  DiskDriver_readBlock(&disk, dest, 14);
+		if (ret == -1) printf("\n    TEST FAILED");
+		printf("    Lettura con successo di <%s> nel blocco 14", (char *) dest);
+		getchar(); 
+		printf("\n");
+	
+		printf("\n");
+
+		printf("\n\n    CLICCA ENTER PER ANDARE AVANTI ");
+		getchar();
+		printf("\n\n\n"); 
 		//JM Effettuo test su  DiskDriver_freeBlock
 		printf("\n\n--- Test DiskDriver_freeBlock()");
 		
-		printf("\n     Output bitmap entries before DiskDriver_readBlock() : ");
-		binary_print(bitmap.entries);
-		
-		printf("\n     Output bitmap entries after DiskDriver_readBlock(4) : ");
-		ret =  DiskDriver_freeBlock(&disk, 4);
-	   	binary_print(bitmap.entries);
-	   	
-		printf("\n     Output bitmap entries after DiskDriver_readBlock(3) : ");
-		ret =  DiskDriver_freeBlock(&disk, 3);
-		binary_print(bitmap.entries);
-		
-		printf("\n     Output bitmap entries after DiskDriver_readBlock(2) : ");
+		printf("\n     Output bitmap entries before DiskDriver_freeBlock() : ");
+			printf("    STAMPO BITMAP ATTUALE in bit: \n\n    ");
+		for (int i=0;i/8<strlen(bitmap.entries);i+=8){
+			binary_print_ablock(bitmap.entries,i);
+			printf("\n    ");
+		}
+		printf("\n    STAMPO BITMAP ATTUALE in blocchi: \n\n    ");
+		for (int i=0;i/8<strlen(bitmap.entries);i+=8){
+			binary_print_block(bitmap.entries,i);
+			printf("\n    ");
+		}
+			
+		getchar(); 
+	
+		printf("     Output bitmap entries after DiskDriver_freeBlock(14) : ");
+		ret =  DiskDriver_freeBlock(&disk, 14);
+	   	binary_print_ablock(bitmap.entries,14);
+		printf("\n    ");
+		binary_print_block(bitmap.entries,14);
+		getchar();
+
+		printf("     Output bitmap entries after DiskDriver_freeBlock(23) : ");
+		ret =  DiskDriver_freeBlock(&disk, 23);
+		binary_print_ablock(bitmap.entries,23);
+		printf("\n    ");
+		binary_print_block(bitmap.entries,23);
+		getchar();
+
+		printf("     Output bitmap entries after DiskDriver_freeBlock(2) : ");
 		ret =  DiskDriver_freeBlock(&disk, 2);
-		binary_print(bitmap.entries);
-		
-		printf("\n     Output bitmap entries after DiskDriver_readBlock(1) : ");
+		binary_print_ablock(bitmap.entries,2);
+		printf("\n    ");
+		binary_print_block(bitmap.entries,2);
+		getchar();
+		printf("     Output bitmap entries after DiskDriver_freeBlock(1) : ");
 		ret =  DiskDriver_freeBlock(&disk, 1);
-		binary_print(bitmap.entries);
-		printf("\n");
 		
+		binary_print_ablock(bitmap.entries,1);
+		printf("\n    ");
+		binary_print_block(bitmap.entries,1);
+		getchar();
 		free(dest);
 		
   }
