@@ -13,10 +13,12 @@
 int choose;
 int i;
 int ret;
+char* entry;
 
 // binary print from stackoverflow
+
 void binary_print(char* str) {
-	 if (strlen(str) == 0) printf("00000000");
+	 if (strlen(str) == 0)printf("00000000") ;
 	else{
 	int i, j;
 	for(i = 0; i < strlen(str); i++) {
@@ -24,7 +26,41 @@ void binary_print(char* str) {
 		for (j = 7; j >= 0; j--) {
 	      printf("%d", !!((c >> j) & 0x01)); 
 	  }
+	  printf("\n");
 	}
+	} 
+}
+
+
+void binary_print_ablock(char* str,int block) {
+	 if (strlen(str) == 0)printf("00000000") ;
+	else{
+	int i, j;
+	i = block/8;
+	
+		char c = str[i];
+		for (j = 7; j >= 0; j--) {
+	      printf("%d", !!((c >> j) & 0x01)); 
+	  	}
+	} 
+}
+
+void binary_print_block(char* str,int block) {
+	 if (strlen(str) == 0) printf("❏ ❏ ❏ ❏ ❏ ❏ ❏ ❏");
+	else{
+	int i, j;
+	i = block/8;
+		char c = str[i];
+
+		for (j = 7; j >= 0; j--) {
+			fflush(stdout);
+			if (!!((c >> j) & 0x01)){
+				printf("▨ ");
+			}
+	      else printf("❏ ");
+		  usleep(30000);
+	  }
+	
 	} 
 }
 
@@ -68,7 +104,7 @@ int main(int argc, char** argv) {
 	printf("██████╦╝██║░░░██║░░░██║░╚═╝░██║██║░░██║██║░░░░░\n");
 	printf("╚═════╝░╚═╝░░░╚═╝░░░╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░░░░\n");
 	printf("\n");
-  	printf("Hai scelto di testare la BitMap\n");
+  	printf("Hai scelto di testare la BitMap\n\n");
   	
 	getchar();
 	
@@ -84,38 +120,40 @@ int main(int argc, char** argv) {
 		BitMapEntryKey block1 = BitMap_blockToIndex(num);
 		printf("    La posizione del blocco è %d, ovvero la entry_num %d al bit_num %d", num, block1.entry_num, block1.bit_num);
 	}
-	printf("\n CLICCA ENTER PER ANDARE AVANTI ");
+	printf("\n    CLICCA ENTER PER ANDARE AVANTI ");
 	getchar();
-
-  	// JM Eseguo il Test per la funzione BitMap_blockToIndex
+	printf("\n\n\n");
+  	
+	  // JM Eseguo il Test per la funzione BitMap_blockToIndex
 	num = 420;
 	printf("\n--- Test BitMap_blockToIndex(%d)\n", num);   
 	BitMapEntryKey block = BitMap_blockToIndex(num);
-	printf("    La posizione del blocco è %d, ovvero la entry_num %d al bit_num %d\n ", num, block.entry_num, block.bit_num);
+	printf("\n    La posizione del blocco è %d, ovvero la entry_num %d al bit_num %d\n ", num, block.entry_num, block.bit_num);
 		
 
-	printf(" \n Scanning to block %d ....\n\n",block.entry_num);
+	printf("\n    Scanning to block %d ....\n    ",block.entry_num);
 	for (int i = 0;i<block.entry_num;i++){
 		fflush(stdout);
 		printf("❏ ");
-		usleep(50000);
+		usleep(20000);
 	}
-	printf("\n\n Showing the %d block with bitnum %d ....\n\n",block.entry_num,block.bit_num);
+	printf("\n\n    Showing the %d block with bitnum %d ....\n    ",block.entry_num,block.bit_num);
 	for (int i = 0;i<8;i++){
 		fflush(stdout);
 		if(i<block.bit_num){
 			printf("▢ ");
 		}
-		else printf("▄ ");
+		else printf("▨ ");
 		usleep(70000);
 	}
-	printf("\n CLICCA ENTER PER ANDARE AVANTI ");
+	printf("\n\n    CLICCA ENTER PER ANDARE AVANTI ");
 	getchar();
 	// JM Eseguo il Test BitMap_indexToBlock 
+	printf("\n\n\n");
 	
-	printf("\n\n--- Test BitMap_indexToBlock(block.entry_num, block.bit_num)");
+	printf("\n\n--- Test BitMap_indexToBlock(block.entry_num, block.bit_num)\n\n");
 	int posizione = BitMap_indexToBlock(block.entry_num, block.bit_num); 
-		printf("\n    Abbiamo la entry %d e il bit %d, ovvero la posizione %d", block.entry_num, block.bit_num, posizione);
+		printf("    Abbiamo la entry %d e il bit %d, ovvero la posizione %d", block.entry_num, block.bit_num, posizione);
 	
 	//JM Eseguo il test per la BitMap_set() per il quale ho bisogno di un DiskDriver e bitmap
 	DiskDriver disk;
@@ -129,59 +167,131 @@ int main(int argc, char** argv) {
 	for(i = 0; i < bitmap.num_bits; i++)
 		BitMap_set(&bitmap, i, 0);
 	
-	printf("\n CLICCA ENTER PER ANDARE AVANTI ");
+	printf("\n\n    CLICCA ENTER PER ANDARE AVANTI ");
 	getchar();
+	printf("\n\n\n");
 
 	printf("\n\n--- Test BitMap_set(BitMap* bitmap, int pos, int status) :");
-	printf("\n    Output before BitMap_set()    :");
+	printf("\n\n    Output before BitMap_set()    :");
+	
 
-	 binary_print(bitmap.entries);
+	binary_print(bitmap.entries);
+	printf("\n    ");
+	for (int i = 0;i<8;i++){
+		fflush(stdout);
+		printf("❏ ");
+		usleep(30000);
+	}
+
+	printf("\n");
 	ret =  BitMap_set(&bitmap,3, 1);
 	if (ret != -1 ) { printf("\n    Output after Bitmap_set(3, 1) :");
-			   binary_print(bitmap.entries);
+			   binary_print_ablock(bitmap.entries,3);
+			   printf("\n    ");
+			   binary_print_block(bitmap.entries,3);
 			   }
 	else printf("TEST FAILED\n");
-	printf("\n CLICCA ENTER PER ANDARE AVANTI ");
+
 	getchar();
+
 	ret =  BitMap_set(&bitmap,3, 0);
 	if (ret != -1 ) { printf("\n    Output after Bitmap_set(3, 0) :");
-			   binary_print(bitmap.entries); }
+			   binary_print_ablock(bitmap.entries,3);
+			   printf("\n    ");
+			   binary_print_block(bitmap.entries,3);
+			    }
 			  
 	else printf("TEST FAILED\n");
-	printf("\n CLICCA ENTER PER ANDARE AVANTI ");
+	
 	getchar();
 	ret =  BitMap_set(&bitmap,4, 1);
 	if (ret != -1 ) { printf("\n    Output after Bitmap_set(4, 1) :");
-			   binary_print(bitmap.entries);
+			   binary_print_ablock(bitmap.entries,4);
+			   printf("\n    ");
+			   binary_print_block(bitmap.entries,4);
 			   }
-	else printf("TEST FAILED");
-	printf("\n CLICCA ENTER PER ANDARE AVANTI ");
+	else printf("TEST FAILED\n");
+	
 	getchar();
 	ret =  BitMap_set(&bitmap,2, 1);
 	if (ret != -1 ) { printf("\n    Output after Bitmap_set(2, 1) :");
-			   binary_print(bitmap.entries);
+			   binary_print_ablock(bitmap.entries,2);
+			   printf("\n    ");
+			   binary_print_block(bitmap.entries,2);
 			   }
 	else printf("TEST FAILED\n");
-	printf("\n"); 
-	
+
+	getchar(); 
+	ret =  BitMap_set(&bitmap,9, 1);
+	if (ret != -1 ) { printf("\n    Output after Bitmap_set(9, 1) :");
+			   
+			   binary_print_ablock(bitmap.entries,9);
+			   printf("\n    ");
+			   binary_print_block(bitmap.entries,9);
+			   }
+	else printf("TEST FAILED\n");
+
+	getchar(); 
+	ret =  BitMap_set(&bitmap,20, 1);
+	if (ret != -1 ) { printf("\n    Output after Bitmap_set(20, 1) :");
+			   binary_print_ablock(bitmap.entries,20);
+			   printf("\n    ");
+			   binary_print_block(bitmap.entries,20);
+			   }
+	else printf("TEST FAILED\n");
+
+	getchar();
+	ret =  BitMap_set(&bitmap,3, 1);
+	if (ret != -1 ) { printf("\n    Output after Bitmap_set(3, 1) :");
+			   binary_print_ablock(bitmap.entries,3);
+			   printf("\n    ");
+			   binary_print_block(bitmap.entries,3);
+			   }
+	else printf("TEST FAILED\n");
+
+	getchar();
+	printf("\n");
+	printf("    STAMPO BITMAP ATTUALE in bit: \n\n    ");
+	for (int i=0;i/8<strlen(bitmap.entries);i+=8){
+		binary_print_ablock(bitmap.entries,i);
+		printf("\n    ");
+	}
+	printf("\n    STAMPO BITMAP ATTUALE in blocchi: \n\n    ");
+	for (int i=0;i/8<strlen(bitmap.entries);i+=8){
+		binary_print_block(bitmap.entries,i);
+		printf("\n    ");
+	}
+
+	printf("\n\n    CLICCA ENTER PER ANDARE AVANTI ");
+	getchar();
+	printf("\n\n\n");
 	
 	//JM Effettuo il test sulla BitMapGet()
 		printf("\n\n--- Test BitMap_get()");
 		int start = 1, status = 0;    
 		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
-		printf("\n CLICCA ENTER PER ANDARE AVANTI ");
-	getchar();
+		
+		getchar();
 		start = 2, status = 1;
 		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
-		printf("\n CLICCA ENTER PER ANDARE AVANTI ");
-	getchar();
+		
+		getchar();
 		start = 7, status = 0;
 		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
-		printf("\n CLICCA ENTER PER ANDARE AVANTI ");
-	getchar();
+		
+		getchar();
 		start = 3, status = 1;
 		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
+
+		getchar();
+		start = 14, status = 1;
+		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
+
+		getchar();
+		start = 19, status = 1;
+		printf("\n    Partiamo dalla posizione %d e cerchiamo %d => %d", start, status, BitMap_get(&bitmap, start, status));
 		printf("\n");
+
 
 
   	
