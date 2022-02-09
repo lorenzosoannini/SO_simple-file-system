@@ -98,16 +98,16 @@ int main(int argc, char** argv) {
 	for (int i = 0;i<block.entry_num;i++){
 		fflush(stdout);
 		printf("❏ ");
-		usleep(70000);
+		usleep(50000);
 	}
-	printf("\n\n Showing the %d block ....\n\n",block.entry_num);
+	printf("\n\n Showing the %d block with bitnum %d ....\n\n",block.entry_num,block.bit_num);
 	for (int i = 0;i<8;i++){
 		fflush(stdout);
 		if(i<block.bit_num){
 			printf("▢ ");
 		}
 		else printf("▄ ");
-		usleep(50000);
+		usleep(70000);
 	}
 	printf("\n CLICCA ENTER PER ANDARE AVANTI ");
 	getchar();
