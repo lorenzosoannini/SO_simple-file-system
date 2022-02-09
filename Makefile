@@ -2,7 +2,7 @@ CFLAGS= -Wall -g -std=gnu99 -Wstrict-prototypes
 LIBS= 
 CC=gcc
 AR=ar
-BINS= simplefs_test
+BINS= simplefs_test shell
 
 OBJS = bitmap.o disk_driver.o simplefs.o
 
@@ -22,6 +22,9 @@ simplefs_test: simplefs_test.c $(OBJS)
 all:	$(BINS) 
 
 objs: $(OBJS)
+
+shell: shell.c $(OBJS)
+	$(CC) $(CFLAGS) $^ -o shell
 
 clean:
 	rm -rf *.o *~  $(BINS)
